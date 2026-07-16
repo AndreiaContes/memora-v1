@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Memora • Telão</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel&family=Playfair+Display&family=Poppins&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="telao.css" />
+  </head>
+  <!-- telao.html -->
+  <body class="telao">
+    <header class="telao-header">
+      <div class="telao-brand">
+        <img src="img/memora.png" alt="Memora" class="brand-logo-img" />
+        <p style="margin: 0">Memórias que Conectam</p>
+      </div>
+      <!-- O id "contadorFotos" será atualizado pelo JS -->
+      <div class="telao-status"><span id="contadorFotos">0 fotos</span></div>
+    </header>
+
+    <main class="telao-main">
+      <div id="frame" class="foto-container">
+        <img id="fotoTelao" src="" alt="Foto do evento" />
+      </div>
+    </main>
+
+    <footer class="telao-footer">
+      <p>
+        CONTRATE O MEMORA: andreiacontes@hotmail.com | COMPARTILHE MOMENTOS
+        REAIS.
+      </p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="telao.js"></script>
+  </body>
+</html>

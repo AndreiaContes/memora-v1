@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Memora - Galeria Pública</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="galeria.css" />
+  </head>
+  <body class="premium-bg">
+    <div class="menu-sidebar" id="menuSidebar">
+      <div class="menu-header">
+        <img src="img/memora.png" alt="Memora" class="menu-logo-img" />
+        <button class="close-menu" id="closeMenuBtn">&times;</button>
+      </div>
+      <nav class="menu-nav-links">
+        <a href="index.html">Início</a>
+        <a href="album.html">Enviar fotos</a>
+        <a href="galeria.html">Galeria</a>
+        <a href="telao.html">Telão</a>
+        <a href="admin-login.html" class="admin-menu-link"
+          >🔒 Área do Organizador</a
+        >
+      </nav>
+    </div>
+    <div class="menu-overlay" id="menuOverlay"></div>
+
+    <div class="phone-wrapper">
+      <div class="app-card">
+        <header class="header-actions">
+          <button class="menu-button" id="openMenuBtn">
+            <span></span><span></span><span></span>
+          </button>
+        </header>
+
+        <section class="brand-container">
+          <img src="img/memora.png" alt="Memora" class="brand-logo-img" />
+          <p class="brand-subtitle">Memórias que Conectam</p>
+        </section>
+
+        <!-- Seção de Filtros conforme referência -->
+        <div class="filter-bar">
+          <button class="filter-btn active" data-filter="todas">Todas</button>
+          <button class="filter-btn" data-filter="recentes">
+            Mais recentes
+          </button>
+          <button class="filter-btn" data-filter="curtidas">
+            Mais curtidas
+          </button>
+        </div>
+
+        <h2
+          style="
+            font-family: &quot;Cinzel&quot;;
+            text-align: center;
+            margin-bottom: 20px;
+          "
+        >
+          Galeria do Evento
+        </h2>
+
+        <div id="albumGrid"></div>
+
+        <button
+          onclick="window.location.href = 'album.html'"
+          class="btn-glow-primary"
+          style="margin-top: 20px"
+        >
+          ➤ ENVIAR MAIS FOTOS
+        </button>
+      </div>
+    </div>
+
+    <div id="gallery-zoom-modal" class="zoom-modal" style="display: none">
+      <div class="zoom-content">
+        <div class="nav-arrow prev-arrow" onclick="mudarFoto(-1)">&#10094;</div>
+        <img src="" class="zoom-img" />
+        <div class="nav-arrow next-arrow" onclick="mudarFoto(1)">&#10095;</div>
+      </div>
+      <div
+        class="close-zoom-text"
+        onclick="
+          document.getElementById('gallery-zoom-modal').style.display = 'none'
+        "
+      >
+        Toque fora ou aqui para fechar
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="galeria.js"></script>
+  </body>
+</html>

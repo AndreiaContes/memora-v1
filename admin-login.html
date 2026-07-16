@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Memora - Login Admin</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  </head>
+  <body class="premium-bg login-flex-center">
+    <div class="phone-wrapper">
+      <div class="app-card login-card-height">
+        <div class="brand-container">
+          <h1 class="main-logo">Memora</h1>
+          <div class="main-subtitle">Área do Organizador</div>
+        </div>
+
+        <div class="login-form-group">
+          <div class="input-control-wrapper">
+            <label class="premium-input-label">SENHA DE ACESSO</label>
+            <input
+              type="password"
+              id="admin-password"
+              placeholder="Digite a senha do evento"
+              class="premium-text-input"
+            />
+          </div>
+
+          <button id="btn-login-admin" class="btn-glow-primary">
+            Acessar Painel
+          </button>
+
+          <button
+            onclick="window.location.href = 'index.html'"
+            class="btn-outline-secondary small-padding-btn"
+          >
+            Voltar ao Início
+          </button>
+
+          <p id="login-error" class="error-toast-text" style="display: none">
+            Senha incorreta. Tente novamente.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const SUPABASE_URL = "https://rakktbwnybrsvqpbgaid.supabase.co";
+      const SUPABASE_KEY = "sb_publishable_tLqbug91hIKbyGJHv4V8kA_HbjCmKiL";
+      const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+      document
+        .getElementById("btn-login-admin")
+        .addEventListener("click", async () => {
+          const senha = document.getElementById("admin-password").value.trim();
+          const errorText = document.getElementById("login-error");
+
+          errorText.style.display = "none";
+
+          if (!senha) {
+            errorText.textContent = "Digite uma senha.";
+            errorText.style.display = "block";
+            return;
+          }
+
+          const { data, error } = await client
+            .from("eventos")
+            .select("*")
+            .eq("senha", senha)
+            .eq("evento_ativo", true)
+            .single();
+
+          if (error || !data) {
+            console.error("Erro login:", error);
+            errorText.textContent = "Senha incorreta. Tente novamente.";
+            errorText.style.display = "block";
+            return;
+          }
+
+          sessionStorage.setItem("memora_admin", "autenticado");
+          sessionStorage.setItem("evento_slug", data.slug);
+          sessionStorage.setItem("evento_nome", data.nome);
+          sessionStorage.setItem("evento_id", data.id);
+
+          window.location.href = `admin.html?evento=${data.slug}`;
+        });
+    </script>
+  </body>
+</html>

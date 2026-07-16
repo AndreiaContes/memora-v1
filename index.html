@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Memora - Memórias que Conectam</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="premium-bg">
+    <div class="menu-sidebar" id="menuSidebar">
+      <div class="menu-header">
+        <img src="img/memora.png" alt="Memora" class="menu-logo-img" />
+        <button class="close-menu" id="closeMenuBtn">&times;</button>
+      </div>
+      <nav class="menu-nav-links">
+        <a href="index.html">Início</a>
+        <a href="album.html">Enviar Fotos</a>
+        <a href="galeria.html">Galeria</a>
+        <a href="telao.html">Telão</a>
+        <a href="admin-login.html" class="admin-menu-link"
+          >Área do Organizador</a
+        >
+      </nav>
+    </div>
+    <div class="menu-overlay" id="menuOverlay"></div>
+
+    <div class="phone-wrapper">
+      <div class="app-card">
+        <header class="header-actions">
+          <button class="menu-button" id="openMenuBtn">
+            <span></span><span></span><span></span>
+          </button>
+        </header>
+
+        <section class="brand-container">
+          <img src="img/memora.png" alt="Memora" class="brand-logo-img" />
+          <p class="brand-subtitle">Memórias que Conectam</p>
+        </section>
+
+        <main class="hero-container">
+          <h2 class="hero-headline">
+            Suas fotos, <br />
+            nos <span class="accent-italic">melhores</span> momentos!
+          </h2>
+          <p class="hero-subheadline">
+            Participe do nosso evento <br />
+            e compartilhe cada emoção.
+          </p>
+
+          <div class="cta-buttons-group">
+            <input
+              type="file"
+              id="cameraInput"
+              accept="image/*"
+              capture="environment"
+              style="display: none"
+            />
+            <button id="btn-enviar-fotos" class="btn-glow-primary">
+              📷 ENVIAR MINHAS FOTOS
+            </button>
+            <button id="btn-ver-galeria" class="btn-outline-secondary">
+              VER GALERIA
+            </button>
+          </div>
+        </main>
+
+        <footer class="infographic-steps">
+          <div class="step-card"><p>1. Tire suas fotos</p></div>
+          <div class="step-card"><p>2. Envie para o evento</p></div>
+          <div class="step-card"><p>3. Veja no telão</p></div>
+        </footer>
+      </div>
+    </div>
+
+    <!-- 1. Carregar a biblioteca do Supabase primeiro -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- 2. Carregar o seu arquivo de lógica DEPOIS -->
+    <script src="upload.js"></script>
+  </body>
+</html>

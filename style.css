@@ -1,0 +1,410 @@
+/* ==========================================================================
+   1. RESET, IMPORTAÇÃO DE FONTES E VARIÁVEIS LUXURY GLOW
+   ========================================================================== */
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Playfair+Display:ital,wght@0,400;1,400;1,600&family=Poppins:wght@300;400;500;600&display=swap");
+
+:root {
+  --pure-black: #050304;
+  --card-bg: rgba(10, 6, 7, 0.92);
+  --gold-gradient: linear-gradient(
+    135deg,
+    #ffe39f 0%,
+    #d4af37 50%,
+    #aa7c11 100%
+  );
+  --rose-gradient: linear-gradient(
+    135deg,
+    #fbc5d8 0%,
+    #e57373 50%,
+    #ff5252 100%
+  );
+  --border-glow: rgba(212, 175, 55, 0.18);
+  --rose-glow: #e57373;
+  --gold-text: #ffe39f;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background:
+    radial-gradient(
+      circle at 50% 20%,
+      rgba(212, 175, 55, 0.15) 0%,
+      #050304 70%
+    ),
+    radial-gradient(
+      circle at 80% 80%,
+      rgba(131, 67, 83, 0.2) 0%,
+      transparent 50%
+    );
+  background-color: #050304;
+  color: #ffffff;
+  font-family: "Poppins", sans-serif;
+  overflow-x: hidden;
+  min-height: 100vh;
+  margin: 0;
+}
+
+/* Camada das pétalas/luzes de fundo */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: url("https://www.transparenttextures.com/patterns/stardust.png");
+  opacity: 0.2;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.phone-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  width: 100%;
+  padding: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.app-card {
+  width: 100%;
+  max-width: 390px;
+  background: rgba(10, 6, 7, 0.85);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  border-radius: 44px;
+  padding: 40px 24px;
+  backdrop-filter: blur(20px);
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.8),
+    0 0 20px rgba(212, 175, 55, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ==========================================================================
+   3. NAVEGAÇÃO E HEADER
+   ========================================================================== */
+.header-actions {
+  margin-bottom: 35px;
+}
+
+.menu-button {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  border: 1px solid rgba(251, 197, 216, 0.2);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+}
+
+.menu-button span {
+  display: block;
+  width: 16px;
+  height: 1.5px;
+  background: var(--gold-text);
+}
+
+/* BRAND */
+
+.main-logo {
+  font-family: "Playfair Display", serif;
+  font-size: 46px;
+  font-weight: 400;
+  font-style: italic;
+  background: var(--gold-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.main-subtitle {
+  font-size: 8px;
+  letter-spacing: 4px;
+  color: var(--gold-text);
+  text-transform: uppercase;
+}
+
+/* ==========================================================================
+   4. TIPOGRAFIA E BOTÕES
+   ========================================================================== */
+.hero-headline {
+  font-family: "Cinzel", serif;
+  font-size: 26px;
+  line-height: 1.4;
+  text-align: center;
+  margin-bottom: 18px;
+}
+.accent-italic {
+  font-family: "Playfair Display", serif;
+  font-style: italic;
+  background: var(--rose-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.hero-subheadline {
+  font-size: 13px;
+  color: #bfaeb3;
+  text-align: center;
+  margin-bottom: 45px;
+}
+
+.cta-buttons-group {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+.btn-glow-primary {
+  background: var(--rose-gradient);
+  border: none;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 16px;
+  border-radius: 14px;
+  cursor: pointer;
+  text-transform: uppercase;
+  box-shadow: 0 8px 25px rgba(229, 115, 115, 0.4);
+}
+
+.btn-outline-secondary {
+  background: rgba(5, 3, 4, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 16px;
+  border-radius: 14px;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+/* ==========================================================================
+   5. FOOTER, MENU E ÁREA DO ORGANIZADOR
+   ========================================================================== */
+.infographic-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 25px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: center;
+}
+.step-card p {
+  font-size: 9px;
+  color: #a49196;
+}
+
+.menu-sidebar {
+  position: fixed;
+  top: 0;
+  right: -320px;
+  width: 300px;
+  height: 100vh;
+  background: rgba(15, 9, 11, 0.98);
+  z-index: 99999;
+  transition: right 0.3s ease;
+  padding: 30px 20px;
+}
+.menu-sidebar.menu-active {
+  right: 0;
+}
+.menu-nav-links a {
+  display: block;
+  color: white;
+  text-decoration: none;
+  padding: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Estilo específico para o link do Organizador */
+.admin-menu-link {
+  color: var(--gold-text) !important;
+  font-weight: 600;
+  margin-top: 20px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 10px;
+}
+
+.menu-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: none;
+}
+.menu-overlay.active {
+  display: block;
+}
+
+/* Estilização da Página de Album */
+.header-actions-album {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+.back-btn {
+  color: white;
+  text-decoration: none;
+  font-size: 20px;
+}
+.logo-mini {
+  font-family: "Playfair Display", serif;
+  font-style: italic;
+  color: #ffe39f;
+}
+
+.upload-zone {
+  border: 2px dashed rgba(229, 115, 115, 0.5);
+  border-radius: 20px;
+  padding: 30px;
+  text-align: center;
+  color: #bfaeb3;
+  margin-bottom: 20px;
+  transition: 0.3s;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+.upload-icon {
+  width: 50px;
+  margin-bottom: 10px;
+  opacity: 0.8;
+}
+
+.selected-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+.text-btn {
+  background: none;
+  border: none;
+  color: #e57373;
+  cursor: pointer;
+}
+
+.preview-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.preview-item {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+}
+
+.footer-note {
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  padding: 15px;
+  border-radius: 15px;
+  font-size: 11px;
+  text-align: center;
+  color: #d4af37;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+/* Container que agrupa a logo e o texto */
+.brand-container {
+  text-align: center;
+  margin-bottom: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Ajuste fino da Logo */
+.brand-logo-img {
+  width: 200px;
+  height: auto;
+  display: block;
+  margin: 0 auto; /* Remove a margem extra que estava criando espaço embaixo */
+}
+
+/* Ajuste do Texto */
+.brand-subtitle {
+  margin: 0;
+  margin-top: -10px; /* Tente valores como -5px a -15px para subir o texto */
+  font-family: "Poppins", sans-serif;
+  font-size: 10px; /* Ajuste o tamanho conforme preferir */
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #a49196;
+}
+
+/* Container da página de Upload */
+.album-upload-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Centraliza horizontalmente todos os itens filhos */
+  width: 100%;
+  max-width: 390px; /* Alinhado com o seu .app-card */
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* O título */
+.album-headline {
+  text-align: center;
+  color: #ffffff;
+  margin-bottom: 25px;
+  font-family: "Poppins", sans-serif;
+  font-weight: 500;
+  width: 100%;
+}
+
+
+/* Ajustes específicos para a nova Logo no Menu */
+.menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.menu-logo-img {
+  width: 120px; /* Tamanho ideal para o menu lateral */
+  height: auto;
+  object-fit: contain;
+}
+
+/* Deixando o botão de fechar mais elegante */
+.close-menu {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  transition: 0.3s;
+}
+
+.close-menu:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--gold-text);
+}

@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Memora - Painel do Organizador</title>
+
+    <link rel="stylesheet" href="admin.css" />
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  </head>
+  <body>
+    <script>
+      if (sessionStorage.getItem("memora_admin") !== "autenticado") {
+        window.location.href = "admin-login.html" + window.location.search;
+      }
+    </script>
+
+    <div class="menu-sidebar" id="menuSidebar">
+      <div class="menu-header">
+        <span class="menu-brand">Memora</span>
+        <button class="close-menu" id="closeMenuBtn">&times;</button>
+      </div>
+
+      <nav class="menu-nav-links">
+        <a href="index.html">🏠 Início</a>
+        <a href="album.html">📤 Enviar fotos</a>
+        <a href="galeria.html">🖼️ Galeria</a>
+
+        <a
+          href="#"
+          onclick="
+            sessionStorage.removeItem('memora_admin');
+            window.location.reload();
+          "
+          class="logout-link"
+        >
+          🚪 Desconectar
+        </a>
+      </nav>
+    </div>
+
+    <div class="admin-dashboard">
+      <div class="header-navigation">
+        <div>
+          <h1 class="small-brand-logo">Memora</h1>
+          <p id="evento-nome-header">Painel do Evento</p>
+        </div>
+
+        <button id="openMenuBtn" class="menu-button">☰</button>
+      </div>
+
+      <div class="admin-actions-wrapper">
+        <button id="btn-modo-selecao" class="btn-premium-action-pill">
+          <span id="icon-modo-selecao">🔍</span>
+          <span id="txt-modo-selecao">Selecionar Fotos</span>
+        </button>
+
+        <div
+          id="grupo-acoes-selecao"
+          class="admin-sub-buttons"
+          style="display: none"
+        >
+          <button id="btn-enviar-privado" class="btn-action-rosé">
+            Mover para Álbum Privado
+          </button>
+
+          <button id="btn-baixar-zip" class="btn-action-gold-outline">
+            Baixar ZIP
+          </button>
+        </div>
+      </div>
+
+      <div
+        id="admin-status-toast"
+        class="status-toast"
+        style="display: none"
+      ></div>
+
+      <div id="admin-gallery-grid" class="responsive-gallery-grid"></div>
+    </div>
+
+    <div id="lightbox-modal" class="zoom-modal" style="display: none">
+      <button id="lightbox-close" class="close-btn">&times;</button>
+
+      <button id="lightbox-prev" class="nav-btn">‹</button>
+
+      <img id="lightbox-img" class="zoom-img" src="" alt="Zoom" />
+
+      <button id="lightbox-next" class="nav-btn right">›</button>
+
+      <div id="lightbox-counter" class="lightbox-counter">0 / 0</div>
+    </div>
+
+    <script src="admin.js"></script>
+  </body>
+</html>
