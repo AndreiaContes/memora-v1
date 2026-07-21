@@ -73,7 +73,8 @@ body::before {
 
 .app-card {
   width: 100%;
-  max-width: 390px;
+  max-width: 460px;
+  min-height: calc(100vh - 40px);
   background: rgba(10, 6, 7, 0.85);
   border: 1px solid rgba(212, 175, 55, 0.25);
   border-radius: 44px;
@@ -139,7 +140,7 @@ body::before {
   font-family: "Cinzel", serif;
   font-size: 26px;
   line-height: 1.4;
-  
+
   text-align: center;
   margin-bottom: 18px;
 }
@@ -372,7 +373,6 @@ body::before {
   width: 100%;
 }
 
-
 /* Ajustes específicos para a nova Logo no Menu */
 .menu-header {
   display: flex;
@@ -408,4 +408,49 @@ body::before {
 .close-menu:hover {
   background: rgba(255, 255, 255, 0.1);
   border-color: var(--gold-text);
+}
+
+/* ===== Responsividade ===== */
+
+@media (max-width: 768px) {
+
+  .phone-wrapper{
+    padding:10px;
+  }
+
+  .app-card{
+    max-width:100%;
+    border-radius:32px;
+    padding:28px 18px;
+  }
+
+}
+
+@media (min-width:769px){
+
+  .app-card{
+
+    max-width:460px;
+
+  }
+
+}
+
+.camera-btn {
+  margin-top: 15px;
+  background: transparent;
+  border: 1px solid #d4af37;
+  color: #d4af37;
+  border-radius: 30px;
+  padding: 10px 25px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.camera-icon {
+  font-size: 22px;
 }

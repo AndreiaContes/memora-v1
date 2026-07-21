@@ -39,6 +39,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // =========================
   const fileInput = document.getElementById("cameraInput");
   const dropZone = document.getElementById("dropZone");
+  const cameraOnlyInput = document.getElementById("cameraOnlyInput");
+  const btnCamera = document.getElementById("btn-camera");
   const previewGrid = document.getElementById("previewGrid");
   const btnEnviar = document.getElementById("btn-enviar-fotos");
   const limparFotos = document.getElementById("limparFotos");
@@ -54,14 +56,29 @@ document.addEventListener("DOMContentLoaded", () => {
   // =========================
   // ABRIR SELETOR
   // =========================
-  dropZone.addEventListener("click", () => {
+  dropZone.addEventListener("click", (e) => {
+  if (e.target.id !== "btn-camera") {
     fileInput.click();
+  }
+});
+
+
+if (btnCamera && cameraOnlyInput) {
+  btnCamera.addEventListener("click", (e) => {
+    e.stopPropagation();
+    cameraOnlyInput.click();
   });
+}
 
   fileInput.addEventListener("change", (e) => {
     arquivosParaUpload = Array.from(e.target.files);
     exibirPreviews();
   });
+
+  cameraOnlyInput.addEventListener("change", (e) => {
+  arquivosParaUpload = Array.from(e.target.files);
+  exibirPreviews();
+});
 
   // =========================
   // PREVIEWS

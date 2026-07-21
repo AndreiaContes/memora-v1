@@ -6,6 +6,7 @@
     <title>Memora - Painel do Organizador</title>
 
     <link rel="stylesheet" href="admin.css" />
+    <link rel="stylesheet" href="style.css" />
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -20,24 +21,18 @@
 
     <div class="menu-sidebar" id="menuSidebar">
       <div class="menu-header">
-        <span class="menu-brand">Memora</span>
+        <img src="img/memora.png" alt="Memora" class="menu-logo-img" />
         <button class="close-menu" id="closeMenuBtn">&times;</button>
       </div>
 
       <nav class="menu-nav-links">
-        <a href="index.html">🏠 Início</a>
-        <a href="album.html">📤 Enviar fotos</a>
-        <a href="galeria.html">🖼️ Galeria</a>
+        <a href="index.html">Início</a>
+        <a href="album.html">Enviar Fotos</a>
+        <a href="galeria.html">Galeria</a>
+        <a href="telao.html">Telão</a>
+        <a href="admin-login.html" class="admin-menu-link">
+          Desconectar
 
-        <a
-          href="#"
-          onclick="
-            sessionStorage.removeItem('memora_admin');
-            window.location.reload();
-          "
-          class="logout-link"
-        >
-          🚪 Desconectar
         </a>
       </nav>
     </div>
@@ -54,7 +49,7 @@
 
       <div class="admin-actions-wrapper">
         <button id="btn-modo-selecao" class="btn-premium-action-pill">
-          <span id="icon-modo-selecao">🔍</span>
+          <span id="icon-modo-selecao"></span>
           <span id="txt-modo-selecao">Selecionar Fotos</span>
         </button>
 
@@ -63,10 +58,6 @@
           class="admin-sub-buttons"
           style="display: none"
         >
-          <button id="btn-enviar-privado" class="btn-action-rosé">
-            Mover para Álbum Privado
-          </button>
-
           <button id="btn-baixar-zip" class="btn-action-gold-outline">
             Baixar ZIP
           </button>

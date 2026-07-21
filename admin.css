@@ -94,13 +94,15 @@ body {
 
 .menu-sidebar {
   position: fixed;
-  right: -300px;
+  right: -360px;
   top: 0;
   width: 300px;
   height: 100%;
   background: #111;
   transition: 0.3s;
   padding: 30px;
+  box-sizing: border-box;
+  z-index: 1000;
 }
 
 .menu-active {

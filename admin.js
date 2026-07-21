@@ -1,6 +1,6 @@
 const params = new URLSearchParams(window.location.search);
-const evento =
-  sessionStorage.getItem("evento_slug") || params.get("evento") || "default";
+const evento = "default";
+ 
 
 const nomeEvento = sessionStorage.getItem("evento_nome");
 const eventoId = sessionStorage.getItem("evento_id");
@@ -150,6 +150,28 @@ function proximaFoto() {
   }
 }
 
-function baixarFotosEmZip() {
-  alert("ZIP em construção");
+async function baixarFotosEmZip() {
+  if (fotosSelecionadas.length === 0) {
+    alert("Selecione pelo menos uma foto.");
+    return;
+  }
+
+  const zip = new JSZip();
+
+  const pastaFotos = zip.folder("Memora-Fotos");
+
+  for (const nomeArquivo of fotosSelecionadas) {
+    const url = `${SUPABASE_URL}/storage/v1/object/public/fotos-eventos/${evento}/${nomeArquivo}`;
+
+    const resposta = await fetch(url);
+    const blob = await resposta.blob();
+
+    pastaFotos.file(nomeArquivo, blob);
+  }
+
+  const arquivoZip = await zip.generateAsync({
+    type: "blob",
+  });
+
+  saveAs(arquivoZip, "Memora-Fotos.zip");
 }
