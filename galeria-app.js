@@ -1,8 +1,5 @@
 
 const SUPABASE_URL = "https://rakktbwnybrsvqpbgaid.supabase.co";
-
-// Utilize a mesma chave pública já usada pelo Memora V1.
-// Não coloque aqui uma chave service_role ou secret.
 const SUPABASE_KEY = "sb_publishable_tLqbug91hIKbyGJHv4V8kA_HbjCmKiL";
 
 const supabaseClient = supabase.createClient(
@@ -20,6 +17,31 @@ const visualizador = document.getElementById("visualizador");
 const fotoAmpliada = document.getElementById("foto-ampliada");
 const botaoFechar = document.getElementById("fechar");
 
+let listaFotos = [];
+let curtidasPorFoto = {};
+let filtroAtual = "todas";
+
+async function carregarCurtidas() {
+  const { data, error } = await supabaseClient
+    .from("curtidas")
+    .select("foto_id")
+    .eq("evento", EVENTO);
+
+  if (error) {
+    console.error("Erro ao carregar curtidas:", error.message);
+    return false;
+  }
+
+  curtidasPorFoto = {};
+
+  (data || []).forEach((item) => {
+    curtidasPorFoto[item.foto_id] =
+      (curtidasPorFoto[item.foto_id] || 0) + 1;
+  });
+
+  return true;
+}
+
 async function carregarFotos() {
   status.textContent = "Carregando fotos...";
 
@@ -27,35 +49,70 @@ async function carregarFotos() {
     .from(BUCKET)
     .list(EVENTO, {
       limit: 100,
-      sortBy: { column: "created_at", order: "desc" }
+      sortBy: { column: "name", order: "desc" }
     });
 
   if (error) {
-    console.error("Erro ao carregar fotos:", error);
-    status.textContent =
-      "Não foi possível carregar as fotos. Tente novamente mais tarde.";
+    console.error("Erro ao carregar fotos:", error.message);
+    status.textContent = "Não foi possível carregar as fotos.";
     return;
   }
 
-  const fotos = (data || []).filter(item =>
+  listaFotos = (data || []).filter((item) =>
     item.name &&
-    !item.name.endsWith("/") &&
+    item.name !== ".emptyFolderPlaceholder" &&
     /\.(jpe?g|png|webp|gif|avif)$/i.test(item.name)
   );
 
-  galeria.replaceChildren();
+  const curtidasCarregadas = await carregarCurtidas();
 
-  if (fotos.length === 0) {
-    status.textContent = "Ainda não há fotos disponíveis neste evento.";
-    return;
+  if (!curtidasCarregadas) {
+    status.textContent =
+      "As fotos foram localizadas, mas não foi possível carregar as curtidas.";
+  } else if (listaFotos.length === 0) {
+    status.textContent = "Ainda não há fotos neste evento.";
+  } else {
+    status.textContent = `${listaFotos.length} foto(s) encontradas.`;
   }
 
-  status.textContent = `${fotos.length} foto(s) encontradas.`;
+  renderizarGaleria();
+}
 
-  for (const item of fotos) {
+function renderizarGaleria() {
+  galeria.replaceChildren();
+
+  document.querySelectorAll(".filtro").forEach((botao) => {
+    const ativo = botao.dataset.filtro === filtroAtual;
+    botao.classList.toggle("ativo", ativo);
+    botao.setAttribute("aria-pressed", String(ativo));
+  });
+
+  let fotosOrdenadas = [...listaFotos];
+
+  if (filtroAtual === "recentes" || filtroAtual === "todas") {
+    fotosOrdenadas.sort((a, b) => b.name.localeCompare(a.name));
+  }
+
+  if (filtroAtual === "curtidas") {
+    fotosOrdenadas.sort((a, b) => {
+      const likesA = curtidasPorFoto[a.name] || 0;
+      const likesB = curtidasPorFoto[b.name] || 0;
+
+      if (likesB !== likesA) {
+        return likesB - likesA;
+      }
+
+      return b.name.localeCompare(a.name);
+    });
+  }
+
+  fotosOrdenadas.forEach((item) => {
     const { data: publicData } = supabaseClient.storage
       .from(BUCKET)
       .getPublicUrl(`${EVENTO}/${item.name}`);
+
+    const container = document.createElement("div");
+    container.className = "photo-wrapper";
 
     const imagem = document.createElement("img");
     imagem.className = "foto";
@@ -64,13 +121,27 @@ async function carregarFotos() {
     imagem.loading = "lazy";
 
     imagem.addEventListener("click", () => {
-      fotoAmpliada.src = imagem.src;
-      visualizador.classList.add("aberto");
-      botaoFechar.focus();
+      abrirFoto(item.name);
     });
 
-    galeria.appendChild(imagem);
-  }
+    const contador = document.createElement("span");
+    contador.className = "like-count";
+    contador.textContent = `♥ ${curtidasPorFoto[item.name] || 0}`;
+
+    container.append(imagem, contador);
+    galeria.appendChild(container);
+  });
+}
+
+function abrirFoto(nomeArquivo) {
+  const { data } = supabaseClient.storage
+    .from(BUCKET)
+    .getPublicUrl(`${EVENTO}/${nomeArquivo}`);
+
+  fotoAmpliada.src = data.publicUrl;
+  fotoAmpliada.alt = "Foto ampliada do evento";
+  visualizador.classList.add("aberto");
+  botaoFechar.focus();
 }
 
 function fecharVisualizador() {
@@ -78,21 +149,26 @@ function fecharVisualizador() {
   fotoAmpliada.removeAttribute("src");
 }
 
+document.querySelectorAll(".filtro").forEach((botao) => {
+  botao.addEventListener("click", () => {
+    filtroAtual = botao.dataset.filtro;
+    renderizarGaleria();
+  });
+});
+
 botaoFechar.addEventListener("click", fecharVisualizador);
 
-visualizador.addEventListener("click", event => {
+visualizador.addEventListener("click", (event) => {
   if (event.target === visualizador) {
     fecharVisualizador();
   }
 });
 
-document.addEventListener("keydown", event => {
+document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     fecharVisualizador();
   }
 });
 
 carregarFotos();
-
-// Atualiza a galeria a cada 30 segundos.
 setInterval(carregarFotos, 30000);
