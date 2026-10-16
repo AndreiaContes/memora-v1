@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Memora | Fotos do Evento</title>
+
+    <meta
+      name="description"
+      content="Reviva os melhores momentos do seu evento com a galeria Memora."
+    />
+
+    <style>
+      :root {
+        --fundo: #171411;
+        --dourado: #d6b879;
+        --texto: #f8f3e9;
+        --texto-secundario: #c9c0b2;
+        --painel: #24201b;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--fundo);
+        color: var(--texto);
+        font-family: Arial, Helvetica, sans-serif;
+      }
+
+      header {
+        padding: 32px 20px 24px;
+        text-align: center;
+        border-bottom: 1px solid #4b3c25;
+      }
+
+      .marca {
+        margin: 0;
+        color: var(--dourado);
+        font-family: Georgia, serif;
+        font-size: 34px;
+        letter-spacing: 4px;
+      }
+
+      .subtitulo {
+        margin: 12px 0 0;
+        color: var(--texto-secundario);
+        font-size: 14px;
+      }
+
+      main {
+        width: min(1100px, 100%);
+        margin: auto;
+        padding: 28px 16px 48px;
+      }
+
+      .introducao {
+        margin-bottom: 24px;
+        text-align: center;
+      }
+
+      .introducao h2 {
+        margin: 0 0 10px;
+        color: var(--dourado);
+        font-family: Georgia, serif;
+        font-size: 25px;
+        font-weight: normal;
+      }
+
+      .introducao p {
+        margin: 0;
+        color: var(--texto-secundario);
+        line-height: 1.6;
+      }
+
+      #status {
+        padding: 28px 12px;
+        color: var(--texto-secundario);
+        text-align: center;
+      }
+
+      #galeria {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .foto {
+        display: block;
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        object-fit: cover;
+        background: var(--painel);
+        border-radius: 5px;
+        cursor: pointer;
+        transition: opacity 0.2s ease;
+      }
+
+      .foto:hover {
+        opacity: 0.85;
+      }
+
+      #visualizador {
+        position: fixed;
+        inset: 0;
+        z-index: 10;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: rgb(0 0 0 / 92%);
+      }
+
+      #visualizador.aberto {
+        display: flex;
+      }
+
+      #foto-ampliada {
+        display: block;
+        max-width: 100%;
+        max-height: 85vh;
+        object-fit: contain;
+      }
+
+      #fechar {
+        position: absolute;
+        top: 16px;
+        right: 20px;
+        padding: 8px 12px;
+        border: 1px solid var(--dourado);
+        border-radius: 4px;
+        background: var(--painel);
+        color: var(--texto);
+        font-size: 16px;
+        cursor: pointer;
+      }
+
+      footer {
+        padding: 20px;
+        border-top: 1px solid #4b3c25;
+        color: var(--texto-secundario);
+        font-size: 12px;
+        text-align: center;
+      }
+
+      @media (max-width: 600px) {
+        header {
+          padding-top: 26px;
+        }
+
+        .marca {
+          font-size: 29px;
+        }
+
+        #galeria {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 7px;
+        }
+
+        main {
+          padding: 24px 10px 36px;
+        }
+      }
+
+      .logo-memora {
+        display: block;
+        width: min(220px, 70%);
+        max-height: 100px;
+        object-fit: contain;
+        margin: 0 auto 12px;
+      }
+
+      header {
+        padding: 24px 16px;
+        text-align: center;
+        border-bottom: 1px solid #4b3c25;
+      }
+
+      .subtitulo {
+        margin: 8px 0 0;
+        color: #d8b58a;
+        font-size: 13px;
+        letter-spacing: 1px;
+      }
+
+      #galeria {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .foto {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        object-fit: cover;
+        border-radius: 4px;
+      }
+
+      @media (max-width: 600px) {
+        header {
+          padding: 18px 12px;
+        }
+
+        .logo-memora {
+          width: min(180px, 65%);
+          max-height: 80px;
+        }
+
+        main {
+          padding: 20px 8px 32px;
+        }
+
+        #galeria {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 5px;
+        }
+
+        .introducao h2 {
+          font-size: 22px;
+        }
+
+        .introducao p {
+          font-size: 13px;
+        }
+      }
+
+      @import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Montserrat:wght@400;500;600&display=swap");
+
+      titulo-galeria/* Filtros */
+.filter-bar {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 5px;
+      }
+
+      .titulo-galeria span {
+        display: block;
+        margin-top: 2px;
+        white-space: nowrap;
+      }
+
+      .titulo-galeria em {
+        color: #e47f91;
+        font-style: italic;
+        font-weight: 700;
+      }
+
+      .introducao p {
+        color: #d8b58a;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 13px;
+        letter-spacing: 0.3px;
+        line-height: 1.5;
+      }
+
+      @media (max-width: 600px) {
+        .titulo-galeria {
+          font-size: clamp(21px, 5.8vw, 32px);
+          letter-spacing: -0.7px;
+        }
+
+        .introducao p {
+          font-size: 12px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <header>
+      <img
+        src="img/memora.png"
+        alt="Memora — Memórias que conectam"
+        class="logo-memora"
+      />
+      <p class="subtitulo">Momentos que merecem ser lembrados</p>
+    </header>
+
+    <main>
+      <section class="introducao">
+        <h2 class="titulo-galeria">
+          SUAS FOTOS,
+          <span>NOS <em>melhores</em> MOMENTOS!</span>
+        </h2>
+        <p>Memórias que conectam pessoas e histórias.</p>
+      </section>
+
+      <p id="status" role="status" aria-live="polite">
+        Preparando a galeria...
+      </p>
+
+      <section id="galeria" aria-label="Fotos do evento"></section>
+    </main>
+
+    <div
+      id="visualizador"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Foto ampliada"
+    >
+      <button id="fechar" type="button" aria-label="Fechar foto">
+        Fechar ✕
+      </button>
+      <img id="foto-ampliada" alt="Foto ampliada do evento" />
+    </div>
+
+    <footer>Memora — Cada momento conta.</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script type="module" src="galeria-app.js"></script>
+  </body>
+</html>
