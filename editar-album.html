@@ -1,0 +1,1567 @@
+
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memora | Editar Álbum</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: #33231b;
+      font-family: Georgia, "Times New Roman", serif;
+      background:
+        linear-gradient(rgba(31,15,10,.28), rgba(31,15,10,.45)),
+        url("img/fundo-editar-album.png") center/cover fixed;
+    }
+
+    .cabecalho {
+      text-align: center;
+      padding: 24px 16px;
+      color: #fff7eb;
+      background: linear-gradient(rgba(25,13,9,.72), rgba(25,13,9,.18));
+      text-shadow: 0 2px 8px rgba(0,0,0,.65);
+    }
+
+    .logo { width: 100px; max-width: 40%; height: auto; }
+    h1 { margin: 8px 0; color: #d8b58a; font-size: clamp(28px,5vw,42px); font-weight: normal; }
+    .subtitulo { color: #f18ca7; font-style: italic; }
+    .introducao { max-width: 600px; margin: 12px auto 0; color: #f1e3d5; font: 14px/1.6 Arial,sans-serif; }
+
+    main { width: min(1240px,96%); margin: 0 auto 40px; }
+
+    .etapa, #areaPreview {
+      min-width: 0;
+      padding: 18px;
+      border: 2px solid #d7ae72;
+      border-radius: 16px;
+      background: rgba(255,248,239,.97);
+      box-shadow: 0 8px 24px rgba(42,19,10,.18);
+    }
+
+    h2 { margin: 0 0 10px; color: #57351f; font-size: 21px; font-weight: normal; }
+    .descricao { margin: 0 0 14px; color: #705b4d; font: 13px/1.5 Arial,sans-serif; }
+    label { color: #57351f; font: 13px Arial,sans-serif; }
+
+    /* GALERIA NO TOPO */
+    #selecao { margin-top: 18px; }
+
+    #status { color: #705b4d; font: 14px/1.5 Arial,sans-serif; }
+    #quantidade { margin: 10px 0; color: #875326; font: bold 13px Arial,sans-serif; }
+
+    #galeria {
+      display: grid;
+      grid-template-columns: repeat(6,minmax(0,1fr));
+      gap: 10px;
+      margin-top: 14px;
+      align-items: start;
+    }
+
+    .foto-item {
+      min-width: 0;
+      overflow: hidden;
+      border: 1px solid #dfc7ac;
+      border-radius: 8px;
+      background: #fffdf9;
+    }
+
+    .foto-item img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      background: #eadfd2;
+    }
+
+    .foto-item label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 7px;
+      font-size: 11px;
+    }
+
+    .foto-item input { accent-color: #a86d2e; }
+
+    .escolha-capa {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 0 7px 8px;
+      font: 11px Arial,sans-serif;
+    }
+
+    /* BOTÕES */
+    .acoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+
+    .botao {
+      border: 1px solid #b9853e;
+      border-radius: 22px;
+      padding: 10px 15px;
+      background: linear-gradient(135deg,#c9954b,#a86d2e);
+      color: #fffaf2;
+      font: bold 13px Arial,sans-serif;
+      cursor: pointer;
+    }
+
+    .botao-secundario { background: #fffaf3; color: #875326; }
+    button:hover { filter: brightness(1.04); }
+    button[hidden] { display: none !important; }
+
+    /* EDITOR: CONTROLES À ESQUERDA E PRÉVIA À DIREITA */
+    .editor-layout {
+      display: grid;
+      grid-template-columns: minmax(280px, 390px) minmax(0,1fr);
+      gap: 16px;
+      align-items: stretch;
+      margin-top: 16px;
+    }
+
+    .editor-controles {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .editor-controles > .etapa { margin: 0; }
+
+    .campo {
+      display: block;
+      width: 100%;
+      margin: 7px 0 13px;
+      padding: 10px;
+      border: 1px solid #dfc7ac;
+      border-radius: 8px;
+      background: #fffdf9;
+      color: #33231b;
+      font: 14px Arial,sans-serif;
+    }
+
+    /* MINIATURAS PEQUENAS */
+    .modelos-capa {
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 7px;
+      margin: 10px auto;
+    }
+
+    .modelo-capa {
+      width: 100%;
+      max-width: 92px;
+      min-width: 0;
+      justify-self: center;
+      padding: 4px;
+      border: 1px solid #e2d0bd;
+      border-radius: 7px;
+      background: #fffdf9;
+      color: #57351f;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .modelo-capa:hover { border-color: #b9853e; }
+
+    .modelo-capa.ativo {
+      border: 2px solid #b9853e;
+      padding: 3px;
+      box-shadow: 0 0 0 2px rgba(185,133,62,.15);
+    }
+
+    .mini-capa {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-evenly;
+      width: 100%;
+      max-width: 82px;
+      margin: 0 auto;
+      aspect-ratio: 2/3;
+      min-height: 0;
+      padding: 3px 2px;
+      gap: 2px;
+      overflow: hidden;
+      background: #fff8ef;
+      border: 1px solid #d7ae72;
+      color: #57351f;
+    }
+
+    .mini-marca { font-size: 5px; letter-spacing: 1px; }
+    .mini-titulo { font-size: 8px; line-height: 1.2; }
+    .mini-foto {
+      display: block;
+      width: 88%;
+      height: 19px;
+      background: linear-gradient(135deg,#e8c9b3,#9c775e,#e9d9c7);
+      border: 2px solid #fff;
+    }
+    .mini-nomes { font-size: 7px; font-style: italic; }
+    .mini-data { font: 5px Arial,sans-serif; letter-spacing: 1px; }
+    .mini-coracao { color: #c9954b; font-size: 11px; }
+    .mini-flores { color: #c77e91; font-size: 12px; }
+
+    .mini-classico { outline: 1px solid #c49a60; outline-offset: -3px; }
+    .mini-minimalista { background: #fffdf9; border-color: #ead9c4; }
+    .mini-minimalista .mini-foto { display: none; }
+    .mini-florido { background: #fff0f0; border-color: #e8b8c1; }
+    .mini-florido .mini-foto { height: 17px; }
+    .mini-moderno { background: #211a19; color: #e6bd78; border-color: #bd914e; }
+    .mini-moderno .mini-foto { border-color: #bd914e; background: #514037; }
+    .mini-fotografico { background: #f3eee7; }
+    .mini-fotografico .mini-foto { height: 27px; }
+    .mini-contemporaneo { background: #f6dfe0; border-radius: 15px 15px 3px 3px; border-color: #dca9ad; }
+    .mini-contemporaneo .mini-foto { width: 75%; height: 23px; border-radius: 30px 30px 0 0; }
+
+    .nome-modelo {
+      display: block;
+      margin-top: 4px;
+      font: bold 9px/1.2 Arial,sans-serif;
+    }
+
+    /* ÁREA GRANDE DE PRÉVIA */
+    #areaPreview {
+      min-width: 0;
+      min-height: 600px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #areaPreview .descricao { margin-bottom: 8px; }
+
+    #previaCapa {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
+      margin-top: 8px;
+      text-align: center;
+    }
+
+    .capa-preview {
+      position: relative;
+      isolation: isolate;
+      width: min(100%,350px);
+      aspect-ratio: 2/3;
+      margin: auto;
+      overflow: hidden;
+      background-color: #fff8ef;
+      background-position: center;
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+      color: var(--cor-texto-capa,#57351f);
+      text-align: center;
+    }
+
+    .conteudo-capa {
+      position: absolute;
+      z-index: 3;
+      top: 19%;
+      left: 10%;
+      width: 80%;
+      text-align: center;
+      overflow-wrap: anywhere;
+    }
+
+    .conteudo-capa h3 {
+      margin: 0;
+      color: inherit;
+      font-size: clamp(18px,2vw,28px);
+      line-height: 1.15;
+      font-weight: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .capa-preview .nomes {
+      margin-top: 6px;
+      color: inherit;
+      font-size: 15px;
+      overflow-wrap: anywhere;
+    }
+
+    .capa-preview .frase-capa {
+      margin-top: 8px;
+      color: inherit;
+      font-size: 12px;
+      line-height: 1.35;
+      font-style: italic;
+      overflow-wrap: anywhere;
+    }
+
+    .capa-preview .foto-capa {
+      position: absolute;
+      z-index: 2;
+      top: 40%;
+      left: 10%;
+      width: 80%;
+      height: 30%;
+      object-fit: cover;
+      border: 3px solid rgba(255,255,255,.9);
+      box-shadow: 0 3px 12px rgba(0,0,0,.2);
+    }
+
+    .capa-preview .data {
+      position: absolute;
+      z-index: 3;
+      bottom: 8%;
+      left: 10%;
+      width: 80%;
+      color: inherit;
+      text-align: center;
+      font: 10px Arial,sans-serif;
+      letter-spacing: 1px;
+    }
+
+    /* POSIÇÕES INICIAIS POR MODELO */
+    .tema-classico .conteudo-capa { top: 19%; }
+    .tema-classico .foto-capa { top: 40%; left: 10%; width: 80%; height: 30%; }
+
+    .tema-minimalista .conteudo-capa { top: 25%; }
+    .tema-minimalista .foto-capa { top: 43%; left: 12%; width: 76%; height: 26%; }
+
+    .tema-florido .conteudo-capa { top: 24%; }
+    .tema-florido .foto-capa { top: 40%; left: 10%; width: 80%; height: 25%; }
+
+    .tema-moderno .conteudo-capa { top: 15%; }
+    .tema-moderno .foto-capa { top: 38%; left: 10%; width: 80%; height: 30%; border-color: #d8b15a; }
+
+    .tema-fotografico .foto-capa { top: 9%; left: 10%; width: 80%; height: 43%; }
+    .tema-fotografico .conteudo-capa { top: 61%; }
+
+    .tema-contemporaneo .conteudo-capa { top: 18%; }
+    .tema-contemporaneo .foto-capa {
+      top: 38%;
+      left: 15%;
+      width: 70%;
+      height: 29%;
+      border-radius: 100px 100px 0 0;
+    }
+
+    /* PRÉVIA FINAL DO ÁLBUM */
+    #etapaFinal { margin-top: 16px; }
+    #previaAlbum { margin-top: 22px; }
+
+    .album-pagina {
+      width: 100%;
+      padding: 18px;
+      margin: 18px 0;
+      background: #fffdf9;
+      border: 1px solid #dfc7ac;
+      border-radius: 10px;
+      break-inside: avoid;
+    }
+
+    .album-pagina h3 { color: #875326; font-weight: normal; text-align: center; margin-top: 0; }
+    .fotos-pagina { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+    .fotos-pagina figure { margin: 0; }
+    .fotos-pagina img { display: block; width: 100%; aspect-ratio: 4/3; object-fit: contain; background: #f3ece4; }
+    .fotos-pagina figcaption { margin-top: 5px; color: #705b4d; font: 11px Arial,sans-serif; overflow-wrap: anywhere; }
+    #mensagemFinal { margin-top: 16px; color: #705b4d; font: 14px/1.5 Arial,sans-serif; }
+
+    footer {
+      text-align: center;
+      padding: 24px 12px;
+      margin-top: 20px;
+      color: #fff2e1;
+      font: 12px Arial,sans-serif;
+      text-shadow: 0 2px 5px #28140c;
+    }
+
+    @media (max-width: 900px) {
+      #galeria { grid-template-columns: repeat(4,minmax(0,1fr)); }
+      .editor-layout { grid-template-columns: minmax(240px,.7fr) minmax(0,1fr); }
+      #areaPreview { min-height: 520px; }
+    }
+
+    @media (max-width: 680px) {
+      .editor-layout { grid-template-columns: 1fr; }
+      .etapa, #areaPreview { padding: 14px; }
+      #galeria { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; }
+      .modelos-capa { gap: 5px; }
+      .modelo-capa { max-width: 100px; }
+      .mini-capa { max-width: 90px; }
+      #areaPreview { min-height: 440px; }
+      .botao { width: 100%; }
+      .fotos-pagina { gap: 8px; }
+    }
+
+    
+.controles-foto-capa {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid #dfc7ac;
+  border-radius: 12px;
+  background: #fffdf9;
+  font-family: Arial, sans-serif;
+}
+
+.controles-foto-capa h3 {
+  margin: 0 0 8px;
+  color: #57351f;
+  font-size: 16px;
+}
+
+.controles-foto-capa p {
+  color: #705b4d;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.controles-foto-capa label {
+  display: block;
+  margin: 12px 0 5px;
+}
+
+.controles-foto-capa input[type="range"] {
+  width: 100%;
+  accent-color: #a86d2e;
+  cursor: pointer;
+}
+
+#valorRotacao {
+  color: #875326;
+  font-size: 12px;
+}
+
+.janela-foto {
+  position: absolute;
+  z-index: 2;
+  overflow: hidden;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+}
+
+.janela-foto:active {
+  cursor: grabbing;
+}
+
+.janela-foto img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  transform-origin: center center;
+  pointer-events: none;
+  user-select: none;
+}
+
+.janela-foto .foto-ajustavel {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+@media (max-width: 680px) {
+  .controles-foto-capa .botao {
+    width: 100%;
+  }
+}
+
+.janela-foto {
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.janela-foto .foto-ajustavel {
+  display: block;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+.janela-foto:active {
+  cursor: grabbing;
+}
+
+
+
+/* Moldura fixa para a fotografia */
+.janela-foto {
+  position: absolute;
+  overflow: hidden;
+  isolation: isolate;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+}
+
+.janela-foto:active {
+  cursor: grabbing;
+}
+
+/* Camada independente: é ela que se move e gira */
+.janela-foto .camada-foto {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 140%;
+  height: 140%;
+  transform-origin: center center;
+  will-change: transform;
+}
+
+/* Fotografia que preenche a camada */
+.janela-foto .foto-ajustavel {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Painel simplificado */
+.controles-foto-capa {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid #dfc7ac;
+  border-radius: 12px;
+  background: #fffdf9;
+  font-family: Arial, sans-serif;
+}
+
+.controles-foto-capa h3 {
+  margin: 0 0 8px;
+  color: #57351f;
+  font-size: 16px;
+}
+
+.controles-foto-capa p {
+  color: #705b4d;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+
+/* A capa é a área de trabalho */
+.capa-preview {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Camada de interação ocupa a capa inteira */
+.janela-foto {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: visible !important;
+  border-radius: 0 !important;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+  z-index: 5;
+}
+
+.janela-foto:active {
+  cursor: grabbing;
+}
+
+/* A foto tem sua própria posição e dimensões */
+.janela-foto .foto-ajustavel {
+  position: absolute;
+  max-width: none !important;
+  object-fit: cover;
+  transform-origin: center center;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+
+.seletor-layout-album {
+  margin: 16px 0;
+  padding: 16px;
+  border: 1px solid #dfc7ac;
+  border-radius: 12px;
+  background: #fffdf9;
+}
+
+.seletor-layout-album label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #57351f;
+}
+
+.seletor-layout-album select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #cdb79e;
+  border-radius: 8px;
+  background: white;
+}
+
+.seletor-layout-album p {
+  margin-bottom: 0;
+  color: #705b4d;
+  font-size: 12px;
+}
+
+.album-pagina {
+  box-sizing: border-box;
+  width: min(100%, 720px);
+  min-height: 700px;
+  margin: 24px auto;
+  padding: 36px;
+  overflow: hidden;
+  color: #40352e;
+  background: #fffdf8;
+  box-shadow: 0 4px 20px #00000012;
+}
+
+.album-pagina h3 {
+  margin: 0 0 24px;
+  font-family: Georgia, serif;
+  text-align: center;
+}
+
+
+.fotos-pagina {
+  display: grid;
+  gap: 18px;
+}
+
+.fotos-pagina figure {
+  position: relative;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+.fotos-pagina img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transform-origin: center center;
+  transition: transform 0.15s ease;
+}
+
+
+.foto-interna-janela {
+  position: absolute;
+  inset: 8px;
+  overflow: hidden;
+  touch-action: none;
+  cursor: grab;
+  z-index: 1;
+}
+
+.foto-interna-camada {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 100%;
+  height: 100%;
+  transform-origin: center center;
+  will-change: transform;
+}
+
+
+.foto-interna-camada img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: contain;
+  object-position: center;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+
+.fotos-pagina figure {
+  position: relative;
+  overflow: hidden;
+}
+
+.fotos-pagina figure .foto-interna-janela {
+  z-index: 2;
+}
+
+.fotos-pagina figcaption {
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.controles-zoom-foto {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.controles-zoom-foto button {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 18px;
+  background: #eee3d2;
+  color: #543b2b;
+}
+
+.controles-zoom-foto span {
+  min-width: 42px;
+  text-align: center;
+  font-size: 12px;
+}
+
+/* 1. Elegante */
+.album-pagina.layout-elegante {
+  background-color: #f7f0e4;
+  background-image: repeating-linear-gradient(
+    0deg, #ffffff18 0px, #ffffff18 1px, transparent 1px, transparent 5px
+  );
+}
+
+.layout-elegante .fotos-pagina {
+  grid-template-columns: 1fr;
+}
+
+.layout-elegante .fotos-pagina figure {
+  height: 470px;
+}
+
+/* 2. Scrapbook */
+.album-pagina.layout-scrapbook {
+  background-color: #e9d8bb;
+  background-image: radial-gradient(#a98a6330 0.7px, transparent 0.7px);
+  background-size: 7px 7px;
+}
+
+.layout-scrapbook .fotos-pagina {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.layout-scrapbook .fotos-pagina figure:nth-child(4n + 1) {
+  transform: rotate(-1deg);
+}
+
+.layout-scrapbook .fotos-pagina figure:nth-child(4n + 2) {
+  transform: rotate(1.2deg);
+}
+
+.layout-scrapbook .fotos-pagina figure {
+  padding: 8px;
+  background: #fffdf8;
+  box-shadow: 0 3px 8px #00000018;
+}
+
+.layout-scrapbook .fotos-pagina img {
+  height: 190px;
+}
+
+/* 3. Editorial */
+.album-pagina.layout-editorial {
+  background: #ffffff;
+}
+
+.layout-editorial .fotos-pagina {
+  grid-template-columns: 1.4fr 1fr;
+  align-items: start;
+}
+
+.layout-editorial .fotos-pagina figure:nth-child(odd) img {
+  height: 320px;
+}
+
+.layout-editorial .fotos-pagina figure:nth-child(even) {
+  margin-top: 65px;
+}
+
+.layout-editorial .fotos-pagina figure:nth-child(even) img {
+  height: 220px;
+}
+
+/* 4. Afetivo */
+.album-pagina.layout-afetivo {
+  background-color: #f8eeee;
+  background-image: radial-gradient(#d8a9b220 0.8px, transparent 0.8px);
+  background-size: 9px 9px;
+}
+
+.layout-afetivo .fotos-pagina {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.layout-afetivo .fotos-pagina img {
+  height: 230px;
+  border-radius: 8px;
+}
+
+@media (max-width: 600px) {
+  .album-pagina {
+    min-height: auto;
+    padding: 20px;
+  }
+
+  .layout-elegante .fotos-pagina figure {
+    height: 320px;
+  }
+
+  .layout-scrapbook .fotos-pagina img,
+  .layout-afetivo .fotos-pagina img {
+    height: 150px;
+  }
+
+  .layout-editorial .fotos-pagina figure:nth-child(odd) img {
+    height: 220px;
+  }
+
+  .layout-editorial .fotos-pagina figure:nth-child(even) img {
+    height: 160px;
+  }
+}
+
+
+/* CORREÇÃO DAS FOTOS INTERNAS NOS QUATRO LAYOUTS */
+.fotos-pagina figure {
+  position: relative;
+  box-sizing: border-box;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* A janela de edição ocupa a área interna da moldura */
+.fotos-pagina figure .foto-interna-janela {
+  position: absolute;
+  inset: 8px;
+  overflow: hidden;
+  touch-action: none;
+  cursor: grab;
+  z-index: 1;
+}
+
+/* A camada mantém o tamanho da área de visualização */
+.fotos-pagina figure .foto-interna-camada {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 100%;
+  height: 100%;
+  transform-origin: center center;
+}
+
+/* A foto pode ser ampliada sem deformação */
+.fotos-pagina figure .foto-interna-camada img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: contain;
+  object-position: center;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Elegante: fotografia grande */
+.layout-elegante .fotos-pagina figure {
+  height: 470px;
+}
+
+/* Scrapbook: moldura branca estilo polaroid */
+.layout-scrapbook .fotos-pagina figure {
+  height: 210px;
+  padding: 8px;
+  background: #fffdf8;
+  box-shadow: 0 3px 8px #00000018;
+}
+
+/* Editorial: alturas assimétricas */
+.layout-editorial .fotos-pagina figure:nth-child(odd) {
+  height: 320px;
+}
+
+.layout-editorial .fotos-pagina figure:nth-child(even) {
+  height: 220px;
+}
+
+/* Afetivo: fotografias com moldura suave */
+.layout-afetivo .fotos-pagina figure {
+  height: 230px;
+  border-radius: 8px;
+}
+
+/* Controles de zoom sempre visíveis sobre a fotografia */
+.fotos-pagina figure .controles-zoom-foto {
+  z-index: 5;
+  pointer-events: auto;
+}
+
+.fotos-pagina figure .controles-zoom-foto button {
+  pointer-events: auto;
+}
+
+/* Ajustes para telas pequenas */
+@media (max-width: 600px) {
+  .layout-elegante .fotos-pagina figure {
+    height: 320px;
+  }
+
+  .layout-scrapbook .fotos-pagina figure {
+    height: 170px;
+  }
+
+  .layout-editorial .fotos-pagina figure:nth-child(odd) {
+    height: 220px;
+  }
+
+  .layout-editorial .fotos-pagina figure:nth-child(even) {
+    height: 160px;
+  }
+
+  .layout-afetivo .fotos-pagina figure {
+    height: 170px;
+  }
+}
+
+
+
+/* Ferramentas criativas das páginas */
+.ferramentas-memoria {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 18px;
+  padding: 10px;
+  border: 1px solid #dfc7ac;
+  border-radius: 10px;
+  background: #fffaf3;
+}
+
+.ferramentas-memoria button {
+  padding: 8px 12px;
+  border: 1px solid #d7ae72;
+  border-radius: 18px;
+  background: #fffdf9;
+  color: #57351f;
+  cursor: pointer;
+  font: 12px Arial, sans-serif;
+}
+
+.ferramentas-memoria button:hover {
+  background: #f3e5d1;
+}
+
+.album-pagina {
+  position: relative;
+}
+
+.camada-memorias {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  pointer-events: none;
+}
+
+.item-memoria {
+  position: absolute;
+  min-width: 90px;
+  max-width: 75%;
+  padding: 8px;
+  cursor: grab;
+  pointer-events: auto;
+  touch-action: none;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  font: 15px/1.4 Georgia, serif;
+}
+
+.item-memoria:active {
+  cursor: grabbing;
+}
+
+.item-memoria.texto-livre {
+  background: transparent;
+  border: 1px dashed transparent;
+}
+
+.item-memoria.texto-livre:focus {
+  outline: 1px dashed #b9853e;
+  background: #ffffffb8;
+}
+
+.item-memoria.postit {
+  width: 145px;
+  min-height: 105px;
+  box-shadow: 2px 4px 9px #00000020;
+  transform: rotate(-2deg);
+}
+
+.item-memoria.postit-amarelo {
+  background: #fff0a8;
+}
+
+.item-memoria.postit-rosa {
+  background: #ffd8e3;
+}
+
+.item-memoria.postit-azul {
+  background: #d8efff;
+}
+
+.item-memoria.postit-lilas {
+  background: #e9ddff;
+}
+
+.item-memoria.emoji-memoria {
+  min-width: 0;
+  padding: 2px;
+  background: transparent;
+  font-family: sans-serif;
+  font-size: 36px;
+  line-height: 1.2;
+}
+
+.item-memoria [contenteditable="true"] {
+  min-width: 40px;
+  outline: none;
+}
+
+@media print {
+  .ferramentas-memoria {
+    display: none;
+  }
+}
+
+
+/* Seleção e movimentação dos elementos de memória */
+.item-memoria {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.item-memoria.selecionado {
+  outline: 2px solid #b9853e;
+  outline-offset: 3px;
+}
+
+.alca-arraste-memoria {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  width: 28px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid #d7ae72;
+  border-radius: 5px;
+  background: #fffdf8;
+  color: #57351f;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  font: 16px Arial, sans-serif;
+}
+
+.alca-arraste-memoria:active {
+  cursor: grabbing;
+  background: #f3e5d1;
+}
+
+.conteudo-memoria {
+  min-width: 40px;
+  min-height: 24px;
+  outline: none;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  cursor: text;
+}
+
+.emoji-memoria .conteudo-memoria {
+  font-family: sans-serif;
+  font-size: 36px;
+  line-height: 1.2;
+  cursor: default;
+}
+
+.item-memoria.selecionado .conteudo-memoria:focus {
+  outline: none;
+}
+
+
+/* Seleção discreta dos elementos */
+.item-memoria {
+  box-sizing: border-box;
+  position: absolute;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.item-memoria.selecionado {
+  outline: 1px solid #c5a16b;
+  outline-offset: 2px;
+}
+
+/* Alça pequena, sem pontilhado */
+.alca-arraste-memoria {
+  width: 22px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: #ffffffd9;
+  color: #77583b;
+  cursor: grab;
+  font-size: 12px;
+  line-height: 18px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.item-memoria:hover .alca-arraste-memoria,
+.item-memoria.selecionado .alca-arraste-memoria {
+  opacity: 1;
+}
+
+/* Post-its ajustáveis */
+.item-memoria.postit {
+  width: 150px;
+  height: 125px;
+  min-width: 100px;
+  min-height: 80px;
+  max-width: 75%;
+  max-height: 80%;
+  padding: 8px;
+  overflow: auto;
+  resize: both;
+  box-sizing: border-box;
+  box-shadow: 2px 4px 10px #00000020;
+}
+
+/* Emoji livre: sem caixa, fundo ou alça */
+.item-memoria.emoji-memoria {
+  display: block;
+  width: auto;
+  height: auto;
+  min-width: 0;
+  min-height: 0;
+  max-width: none;
+  padding: 2px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+  resize: none;
+  cursor: grab;
+  font-family: sans-serif;
+  font-size: 36px;
+  line-height: 1.2;
+}
+
+.item-memoria.emoji-memoria .alca-arraste-memoria {
+  display: none;
+}
+
+.item-memoria.emoji-memoria.selecionado {
+  outline: none;
+  filter: drop-shadow(0 0 2px #c5a16b);
+}
+
+.item-memoria .conteudo-memoria {
+  min-width: 0;
+  min-height: 24px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+
+.paleta-cores-memora {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  max-width: 190px;
+  padding: 5px;
+}
+
+.paleta-cores-memora button:hover {
+  outline: 2px solid #b9853e;
+  outline-offset: 2px;
+}
+
+
+/* Evita a barra horizontal no texto dos post-its */
+.item-memoria.postit .conteudo-memoria {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+
+.grupo-cores-memora {
+  position: relative;
+  display: inline-flex;
+  align-items: flex-start;
+}
+
+.botao-abrir-cores {
+  padding: 7px 10px;
+  border: 1px solid #d4b18a;
+  border-radius: 18px;
+  background: #fffaf4;
+  color: #57351f;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.paleta-cores-memora {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 100;
+  display: grid;
+  grid-template-columns: repeat(6, 24px);
+  gap: 5px;
+  padding: 10px;
+  border: 1px solid #e1c5a5;
+  border-radius: 10px;
+  background: #fffaf4;
+  box-shadow: 0 4px 14px #00000020;
+}
+
+.paleta-cores-memora[hidden] {
+  display: none !important;
+}
+
+
+/* Área de trabalho do álbum */
+.album-area-trabalho {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  margin-top: 18px;
+}
+
+.painel-lateral-album {
+  position: sticky;
+  top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid #dfc7ac;
+  border-radius: 12px;
+  background: #fffaf4;
+  box-shadow: 0 4px 14px #00000010;
+  font-family: Arial, sans-serif;
+}
+
+.painel-lateral-album h3 {
+  margin: 4px 0;
+  color: #57351f;
+  font-size: 15px;
+}
+
+.painel-lateral-album ol {
+  margin: 0 0 8px;
+  padding-left: 20px;
+  color: #705b4d;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.painel-lateral-album .botao {
+  width: 100%;
+  white-space: normal;
+}
+
+.album-area-trabalho #previaAlbum {
+  min-width: 0;
+  margin-top: 0;
+}
+
+@media (max-width: 760px) {
+  .album-area-trabalho {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .painel-lateral-album {
+    position: static;
+  }
+}
+
+
+
+
+  </style>
+</head>
+
+<body>
+  <header class="cabecalho">
+    <img src="img/memora.png" alt="Memora" class="logo">
+    <h1>Editar Álbum</h1>
+    <div class="subtitulo">Suas memórias, do seu jeito</div>
+    <p class="introducao">Escolha suas fotografias favoritas, personalize a capa e prepare um álbum especial para guardar suas recordações.</p>
+  </header>
+
+  <main>
+    <!-- GALERIA DE FOTOS NO TOPO -->
+    <section class="etapa" id="selecao">
+      <h2>01. Fotografias do evento</h2>
+      <p class="descricao">Marque as fotos que deseja incluir no álbum. Para definir a capa, selecione “Usar como capa”.</p>
+
+      <div id="status" role="status" aria-live="polite">Carregando galeria...</div>
+      <div id="quantidade">0 fotos selecionadas</div>
+      <div id="galeria"></div>
+
+      <div class="acoes">
+        <button id="selecionarTodas" class="botao botao-secundario" type="button">Selecionar todas</button>
+        <button id="limparSelecao" class="botao botao-secundario" type="button">Limpar seleção</button>
+        <button id="botaoAnterior" class="botao botao-secundario" type="button" hidden>← Anterior</button>
+        <button id="carregarMais" class="botao botao-secundario" type="button" hidden>Próximas 12 fotos →</button>
+      </div>
+    </section>
+
+    <!-- CONTROLES À ESQUERDA E PRÉVIA À DIREITA -->
+    <div class="editor-layout">
+      <div class="editor-controles">
+
+        <section class="etapa" id="etapaCapa">
+          <h2>02. Modelos de capa</h2>
+          <p class="descricao">Escolha uma miniatura para alterar a prévia ao lado.</p>
+
+          <div class="modelos-capa">
+            <button type="button" class="modelo-capa ativo" data-modelo="classico" aria-pressed="true">
+              <span class="mini-capa mini-classico">
+                <span class="mini-marca">MEMORA</span>
+                <span class="mini-titulo">Seu título</span>
+                <span class="mini-foto"></span>
+                <span class="mini-nomes">Nomes</span>
+                <span class="mini-data">DATA</span>
+              </span>
+              <span class="nome-modelo">Clássico</span>
+            </button>
+
+            <button type="button" class="modelo-capa" data-modelo="minimalista" aria-pressed="false">
+              <span class="mini-capa mini-minimalista">
+                <span class="mini-marca">MEMORA</span>
+                <span class="mini-coracao">♥</span>
+                <span class="mini-titulo">Seu título</span>
+                <span class="mini-nomes">Nomes</span>
+                <span class="mini-data">DATA</span>
+              </span>
+              <span class="nome-modelo">Minimalista</span>
+            </button>
+
+            <button type="button" class="modelo-capa" data-modelo="florido" aria-pressed="false">
+              <span class="mini-capa mini-florido">
+                <span class="mini-flores">❀ ❁ ❀</span>
+                <span class="mini-marca">MEMORA</span>
+                <span class="mini-titulo">Seu título</span>
+                <span class="mini-foto"></span>
+                <span class="mini-nomes">Nomes</span>
+              </span>
+              <span class="nome-modelo">Florido</span>
+            </button>
+
+            <button type="button" class="modelo-capa" data-modelo="moderno" aria-pressed="false">
+              <span class="mini-capa mini-moderno">
+                <span class="mini-marca">MEMORA</span>
+                <span class="mini-titulo">SEU TÍTULO</span>
+                <span class="mini-foto"></span>
+                <span class="mini-nomes">Nomes</span>
+                <span class="mini-data">DATA</span>
+              </span>
+              <span class="nome-modelo">Moderno</span>
+            </button>
+
+            <button type="button" class="modelo-capa" data-modelo="fotografico" aria-pressed="false">
+              <span class="mini-capa mini-fotografico">
+                <span class="mini-foto"></span>
+                <span class="mini-titulo">Seu título</span>
+                <span class="mini-nomes">Nomes</span>
+                <span class="mini-data">DATA</span>
+              </span>
+              <span class="nome-modelo">Fotográfico</span>
+            </button>
+
+            <button type="button" class="modelo-capa" data-modelo="contemporaneo" aria-pressed="false">
+              <span class="mini-capa mini-contemporaneo">
+                <span class="mini-marca">MEMORA</span>
+                <span class="mini-titulo">Seu título</span>
+                <span class="mini-foto"></span>
+                <span class="mini-nomes">Nomes</span>
+                <span class="mini-data">DATA</span>
+              </span>
+              <span class="nome-modelo">Contemporâneo</span>
+            </button>
+          </div>
+        </section>
+
+        <section class="etapa" id="identificacao">
+          <h2>03. Personalizar álbum</h2>
+          <p class="descricao">Os textos são aplicados à prévia conforme você digita.</p>
+
+          <label for="titulo">Título do álbum</label>
+          <input id="titulo" class="campo" type="text" placeholder="Ex.: Nosso dia especial">
+
+          <label for="nomes">Nomes ou homenageados</label>
+          <input id="nomes" class="campo" type="text" placeholder="Ex.: Ana e Pedro">
+
+          <label for="dataEvento">Data do evento</label>
+          <input id="dataEvento" class="campo" type="date">
+
+          <label for="fraseCapa">Frase especial (opcional)</label>
+          <textarea id="fraseCapa" class="campo" rows="3" maxlength="180" placeholder="Escreva uma dedicatória especial..."></textarea>
+
+          <label for="corTexto">Cor do texto da capa</label>
+          <select id="corTexto" class="campo">
+            <option value="auto">Automática — recomendada</option>
+            <option value="#57351f">Marrom</option>
+            <option value="#ffffff">Branco</option>
+            <option value="#d8b15a">Dourado</option>
+            <option value="#8b4055">Vinho</option>
+            <option value="#222222">Preto</option>
+          </select>
+        </section>
+      </div>
+
+      <!-- ESTA É A ÁREA GRANDE DE PRÉ-VISUALIZAÇÃO -->
+      <section id="areaPreview" aria-label="Prévia ao vivo da capa">
+        <h2>Área de edição</h2>
+        <p class="descricao">Selecione uma fotografia na galeria. A capa será atualizada ao mudar o modelo ou os campos.</p>
+       
+<div id="previaCapa">
+  Selecione uma fotografia na galeria acima para visualizar sua capa.
+</div>
+
+
+<div id="controlesFotoCapa" class="controles-foto-capa">
+  <h3>Enquadrar fotografia</h3>
+  <p>
+    Arraste a foto com um dedo ou o mouse.
+    Use dois dedos para ampliar e girar.
+    No computador, use a roda do mouse para ampliar.
+  </p>
+  <button id="restaurarFoto" type="button"
+    class="botao botao-secundario">
+    Restaurar enquadramento
+  </button>
+</div>
+
+</div>
+
+
+    
+      </section>
+
+      <!-- PRÉ-VISUALIZAÇÃO FINAL DO ÁLBUM -->
+      <section class="etapa" id="etapaFinal">
+        <h2>04. Pré-visualização do álbum</h2>
+        <p class="descricao">
+          Confira a capa e as páginas internas antes de preparar o PDF.
+        </p>
+
+        <div class="acoes">
+          <button id="visualizarAlbum" class="botao" type="button">
+            Visualizar álbum
+          </button>
+
+          <button id="voltarEdicao" class="botao botao-secundario" type="button" hidden>
+            Voltar à edição
+          </button>
+
+          <button id="baixarPdf" class="botao botao-secundario" type="button">
+            Preparar PDF
+          </button>
+        </div>
+
+       
+<p id="mensagemFinal" class="descricao" role="status" aria-live="polite"></p>
+
+<div class="seletor-layout-album">
+  <label for="layoutPadrao">Estilo das novas páginas</label>
+  <select id="layoutPadrao">
+    <option value="elegante">Elegante — foto em destaque</option>
+    <option value="scrapbook">Scrapbook — colagem</option>
+    <option value="editorial">Editorial — composição assimétrica</option>
+    <option value="afetivo">Afetivo — história e memórias</option>
+  </select>
+  <p>Você poderá escolher um estilo diferente para cada página.</p>
+</div>
+
+<div class="album-area-trabalho">
+  <aside class="painel-lateral-album" aria-label="Ajuda e comandos do álbum">
+    <h3>Como editar</h3>
+    <ol>
+      <li>Selecione as fotos na galeria.</li>
+      <li>Escolha o modelo da capa.</li>
+      <li>Arraste textos e elementos para posicioná-los.</li>
+      <li>Use os controles para formatar textos e ajustar fotos.</li>
+      <li>Escolha o estilo de cada página e confira o resultado.</li>
+    </ol>
+
+    <h3>Comandos</h3>
+    <button type="button" class="botao" id="salvarRascunhoLateral">
+      Salvar álbum
+    </button>
+    <button type="button" class="botao botao-secundario" id="voltarEdicaoLateral">
+      Voltar à edição
+    </button>
+    <button type="button" class="botao botao-secundario" id="visualizarAlbumLateral">
+      Pré-visualizar álbum
+    </button>
+
+    <p class="descricao" id="statusSalvamento" role="status"></p>
+  </aside>
+
+  <div id="previaAlbum" hidden></div>
+</div>
+</section>
+
+
+  </main>
+
+  <footer>Memora — Digital Memory Diary<br>Memórias que conectam pessoas e histórias.</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="editar-album.js"></script>
+</body>
+</html>
