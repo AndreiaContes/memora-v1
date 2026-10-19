@@ -1,0 +1,1452 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#171717" />
+    <title>Vídeo de Recordações | Memora</title>
+
+    <style>
+      :root {
+        --gold: #c6a15b;
+        --black: #171717;
+        --panel: #201f1e;
+        --panel2: #292929;
+        --line: #685433;
+        --text: #f5f1e9;
+        --muted: #c9c1b5;
+        --danger: #ffb9b2;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        padding: 20px;
+        color: var(--text);
+        font-family: Arial, Helvetica, sans-serif;
+        background:
+          linear-gradient(rgba(18, 15, 13, 0.8), rgba(18, 15, 13, 0.9)),
+          url("img/fundo-editar-album.png") center/cover fixed;
+      }
+
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      .page {
+        max-width: 1400px;
+        margin: auto;
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 22px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #c6a15b55;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .brand img {
+        width: 48px;
+        height: 48px;
+        object-fit: contain;
+      }
+
+      .brand h1 {
+        margin: 0;
+        color: var(--gold);
+        font-size: 27px;
+        letter-spacing: 1px;
+      }
+
+      .brand p {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .back {
+        padding: 10px 14px;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        background: #171717ef;
+        color: #e4c783;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+
+      .intro {
+        margin-bottom: 22px;
+      }
+
+      .intro h2 {
+        margin: 0 0 8px;
+        font-size: clamp(25px, 3vw, 34px);
+      }
+
+      .intro p {
+        max-width: 820px;
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      /* GRADE PRINCIPAL DO EDITOR */
+      .workspace {
+        display: grid;
+        grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+        column-gap: 18px;
+        align-items: start;
+      }
+
+      /* Editor à esquerda, ocupando a altura dos dois painéis */
+      .workspace > .panel {
+        grid-column: 1;
+        grid-row: 1 / span 2;
+        align-self: start;
+      }
+      .workspace-right {
+        grid-column: 2;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-width: 0;
+      }
+
+      .workspace-right > .preview-panel,
+      .workspace-right > .timeline-panel {
+        width: 100%;
+        min-width: 0;
+        margin: 0;
+      }
+      .panel,
+      .preview-panel,
+      .timeline-panel {
+        min-width: 0;
+        padding: 15px;
+        border: 1px solid #c6a15b55;
+        border-radius: 16px;
+        background: rgba(23, 23, 23, 0.96);
+        box-shadow: 0 15px 40px #0004;
+      }
+
+      .panel h3,
+      .preview-panel h3,
+      .timeline-panel h3 {
+        margin: 0 0 8px;
+        color: var(--gold);
+        font-size: 19px;
+      }
+
+      .field {
+        margin-bottom: 17px;
+      }
+
+      .field label,
+      .field-label {
+        display: block;
+        margin-bottom: 7px;
+        color: #f0e8dc;
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .field small,
+      .hint {
+        display: block;
+        margin-top: 6px;
+        color: #bdb4a7;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .field input[type="text"],
+      .field input[type="file"],
+      .field select,
+      .field input[type="number"] {
+        width: 100%;
+        min-width: 0;
+        padding: 10px;
+        border: 1px solid #51483a;
+        border-radius: 8px;
+        background: #292929;
+        color: #fff;
+      }
+
+      .field input[type="range"] {
+        width: 100%;
+        accent-color: var(--gold);
+      }
+
+      .field input[type="color"] {
+        width: 100%;
+        height: 42px;
+        padding: 4px;
+        border: 1px solid #51483a;
+        border-radius: 8px;
+        background: #292929;
+      }
+
+      details {
+        margin: 10px 0 17px;
+        border: 1px solid #51483a;
+        border-radius: 10px;
+        background: #242321;
+      }
+
+      summary {
+        padding: 12px;
+        color: #e4c783;
+        font-weight: 700;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      summary::marker {
+        color: var(--gold);
+      }
+
+      .details-body {
+        padding: 0 12px 12px;
+      }
+
+      /* Controles de duração e transição compactos e expansíveis */
+      .timeline-options {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 8px;
+        margin-top: 2px;
+      }
+
+      .compact-control {
+        min-width: 0;
+        margin: 0;
+        border: 1px solid #51483a;
+        border-radius: 9px;
+        background: #242321;
+      }
+
+      .compact-control summary {
+        padding: 9px 11px;
+        font-size: 13px;
+      }
+
+      .compact-control .details-body {
+        padding: 0 10px 10px;
+      }
+
+      .compact-control label {
+        display: block;
+        margin: 0 0 6px;
+        color: #f0e8dc;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .compact-control input[type="number"],
+      .compact-control select {
+        width: 100%;
+        min-width: 0;
+        padding: 8px 9px;
+        border: 1px solid #685433;
+        border-radius: 7px;
+        background: #292929;
+        color: #fff;
+      }
+
+      .compact-control small {
+        display: block;
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.4;
+      }
+
+      .swatches {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .swatch {
+        height: 32px;
+        border: 1px solid #ffffff55;
+        border-radius: 7px;
+        padding: 0;
+      }
+
+      .swatch:focus-visible {
+        outline: 2px solid white;
+        outline-offset: 2px;
+      }
+
+      .btn-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 10px 13px;
+        border: 1px solid var(--gold);
+        border-radius: 9px;
+        background: var(--gold);
+        color: var(--black);
+        font-weight: 700;
+      }
+
+      .btn.secondary {
+        background: transparent;
+        color: #e4c783;
+      }
+
+      .btn:disabled {
+        opacity: 0.42;
+        cursor: not-allowed;
+      }
+
+      /* Controles compactos acima das miniaturas */
+      .player-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 13px;
+      }
+
+      .timeline-player-controls {
+        margin: 0 0 8px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #ffffff18;
+      }
+
+      .timeline-player-controls .btn {
+        padding: 8px 11px;
+        font-size: 13px;
+      }
+
+      .screen {
+        position: relative;
+        display: grid;
+        place-items: center;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        max-height: 360px;
+        overflow: hidden;
+        border: 1px solid #c6a15b88;
+        border-radius: 12px;
+        background-color: #171717;
+        background-position: center;
+        background-size: cover;
+        isolation: isolate;
+      }
+
+      .screen::before {
+        content: "";
+        position: absolute;
+        inset: -20px;
+        z-index: -1;
+        background-image: var(--foto-fundo);
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        filter: blur(18px) brightness(0.55);
+        transform: scale(1.08);
+        pointer-events: none;
+      }
+      .screen-photo {
+        position: absolute;
+        inset: 0;
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center center;
+        user-select: none;
+        cursor: grab;
+        touch-action: none;
+        -webkit-user-select: none;
+        -webkit-user-drag: none;
+        transition: opacity 0.55s ease;
+      }
+      .screen-photo.transition-fade {
+        opacity: 0;
+      }
+
+      .screen-photo.transition-slide {
+        transform: translateX(4%);
+        opacity: 0;
+      }
+
+      .screen-photo.transition-zoom {
+        transform: scale(1.06);
+        opacity: 0;
+      }
+
+      .screen-photo.transition-none {
+        transition: none;
+      }
+
+      .screen-caption {
+        position: absolute;
+        z-index: 2;
+        right: 5%;
+        bottom: 7%;
+        left: 5%;
+        color: #fff;
+        font-family: Georgia, serif;
+        font-size: clamp(16px, 2.4vw, 32px);
+        font-weight: 700;
+        line-height: 1.25;
+        text-align: center;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        text-shadow:
+          0 2px 8px #000d,
+          0 0 3px #000;
+        pointer-events: none;
+      }
+
+      .screen-caption.align-left {
+        text-align: left;
+      }
+
+      .screen-caption.align-center {
+        text-align: center;
+      }
+
+      .screen-caption.align-right {
+        text-align: right;
+      }
+
+      .action-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .action-buttons .btn {
+        min-width: 130px;
+      }
+
+      .preview-status {
+        margin-top: 11px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .error {
+        color: var(--danger);
+      }
+
+      /* Cabeçalho e faixa da timeline */
+      .timeline-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .timeline-scroll {
+        position: relative;
+        overflow-x: auto;
+        overflow-y: hidden;
+        border: 1px solid #39342b;
+        border-radius: 9px;
+        background: #121212;
+        scrollbar-color: var(--gold) #292929;
+      }
+      .timeline-ruler {
+        position: relative;
+        height: 28px;
+        border-bottom: 1px solid #494237;
+        background: #191817;
+        color: #bdb4a7;
+        font-size: 11px;
+        user-select: none;
+      }
+      .timeline-ruler-content {
+        position: relative;
+        height: 100%;
+      }
+      .timeline-tick {
+        position: absolute;
+        top: 0;
+        height: 100%;
+        padding-left: 4px;
+        border-left: 1px solid #554a38;
+        white-space: nowrap;
+      }
+      .timeline-track {
+        position: relative;
+        display: flex;
+        align-items: stretch;
+        gap: 3px;
+        width: max-content;
+        min-width: 100%;
+        min-height: 112px;
+        padding: 8px 3px 12px;
+        scrollbar-color: var(--gold) #292929;
+      }
+      .timeline-playhead {
+        position: absolute;
+        z-index: 10;
+        top: 0;
+        bottom: 0;
+        left: 3px;
+        width: 2px;
+        background: #ff5c65;
+        box-shadow: 0 0 5px #ff5c6588;
+        pointer-events: none;
+        transition: left 0.04s linear;
+      }
+      .timeline-playhead::before {
+        content: "";
+        position: absolute;
+        top: -1px;
+        left: -4px;
+        width: 10px;
+        height: 10px;
+        border-radius: 2px;
+        background: #ff5c65;
+      }
+
+      .clip {
+        position: relative;
+        flex: 0 0 130px;
+        min-width: 58px;
+        padding: 5px;
+        border: 1px solid #62543e;
+        border-radius: 10px;
+        background: #282725;
+        color: var(--text);
+        text-align: left;
+      }
+
+      .clip.selected {
+        border: 2px solid var(--gold);
+        padding: 4px;
+        box-shadow: 0 0 0 2px #c6a15b2c;
+      }
+
+      .clip.dragging {
+        opacity: 0.45;
+      }
+
+      .clip img {
+        display: block;
+        width: 100%;
+        height: 76px;
+        object-fit: cover;
+        border-radius: 6px;
+        background: #111;
+      }
+
+      .clip-meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 5px;
+        margin-top: 6px;
+        font-size: 11px;
+        color: #eee1c8;
+      }
+
+      .clip-name {
+        display: block;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        margin-top: 4px;
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      .clip-grip {
+        position: absolute;
+        top: 9px;
+        right: 9px;
+        padding: 2px 5px;
+        border-radius: 5px;
+        background: #171717d9;
+        color: #e4c783;
+        font-size: 12px;
+      }
+
+      .timeline-note {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .edit-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .edit-grid .field {
+        margin-bottom: 12px;
+      }
+
+      .status-chip {
+        display: inline-block;
+        margin-left: 6px;
+        padding: 4px 7px;
+        border: 1px solid #635335;
+        border-radius: 99px;
+        color: #e4c783;
+        font-size: 11px;
+      }
+
+      .audio-preview {
+        display: block;
+        width: 100%;
+        margin-top: 10px;
+      }
+
+      .section-divider {
+        height: 1px;
+        margin: 18px 0;
+        background: #ffffff18;
+      }
+
+      .notice {
+        margin-top: 16px;
+        padding: 12px;
+        border: 1px solid #c6a15b44;
+        border-radius: 10px;
+        background: #c6a15b12;
+        color: #e5d6bb;
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      .footer {
+        margin-top: 28px;
+        color: #b8b0a4;
+        font-size: 12px;
+        text-align: center;
+      }
+
+      /* Layout em telas menores */
+      @media (max-width: 900px) {
+        body {
+          padding: 13px;
+          background-attachment: scroll;
+        }
+
+        .workspace {
+          grid-template-columns: minmax(0, 1fr);
+        }
+
+        .workspace > .panel,
+        .workspace-right {
+          grid-column: 1;
+          grid-row: auto;
+          width: 100%;
+          min-width: 0;
+        }
+
+        .brand h1 {
+          font-size: 22px;
+        }
+
+        .panel,
+        .preview-panel,
+        .timeline-panel {
+          padding: 15px;
+        }
+
+        .edit-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .topbar {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .back {
+          order: 2;
+        }
+
+        .edit-grid,
+        .timeline-options {
+          grid-template-columns: 1fr;
+        }
+
+        .clip {
+          flex-basis: 112px;
+          min-width: 112px;
+        }
+
+        .clip img {
+          height: 66px;
+        }
+
+        .timeline-player-controls .btn {
+          padding: 8px;
+          font-size: 12px;
+        }
+      }
+
+      /* Timeline compacta e responsiva */
+      .timeline-panel {
+        padding: 10px;
+        min-width: 0;
+      }
+
+      .timeline-panel h3 {
+        margin-bottom: 8px;
+      }
+
+      .timeline-track {
+        display: flex;
+        gap: 6px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        max-width: 100%;
+        padding-bottom: 6px;
+        scrollbar-width: thin;
+      }
+
+      .clip {
+        flex: 0 0 86px;
+        min-width: 86px;
+      }
+
+      .clip img {
+        height: 54px;
+      }
+
+      @media (max-width: 600px) {
+        .timeline-panel {
+          padding: 8px;
+        }
+
+        .timeline-panel h3 {
+          font-size: 15px;
+        }
+
+        .clip {
+          flex-basis: 82px;
+          min-width: 82px;
+        }
+
+        .clip img {
+          height: 44px;
+        }
+
+        .clip-meta,
+        .clip-name {
+          font-size: 9px;
+        }
+      }
+
+      /* Controles e ações na mesma linha */
+      .timeline-options {
+        display: grid;
+        grid-template-columns:
+          minmax(90px, 0.65fr)
+          minmax(120px, 0.9fr)
+          minmax(145px, 1fr)
+          minmax(0, 2.4fr);
+        gap: 8px;
+        align-items: start;
+        margin-top: 8px;
+      }
+
+      .timeline-options > .compact-control {
+        min-width: 0;
+        margin: 0;
+      }
+
+      .timeline-options > .timeline-project-actions {
+        display: flex;
+        align-items: center;
+        flex-wrap: nowrap;
+        gap: 5px;
+        min-width: 0;
+        margin: 0;
+        padding: 0;
+        border: 0;
+      }
+
+      .timeline-project-actions .btn {
+        flex: 1 1 0;
+        min-width: 0;
+        padding: 8px 5px;
+        font-size: 11px;
+        white-space: normal;
+      }
+
+      @media (max-width: 700px) {
+        .timeline-options {
+          grid-template-columns: 1fr;
+        }
+
+        .timeline-options > .timeline-project-actions {
+          flex-wrap: wrap;
+        }
+
+        .timeline-project-actions .btn {
+          flex: 1 1 100%;
+        }
+      }
+
+      .timeline-options .compact-control {
+        min-width: 0;
+        margin: 0;
+      }
+
+      .timeline-options .compact-control summary {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .timeline-options .details-body {
+        padding: 10px;
+      }
+
+      .timeline-options input,
+      .timeline-options select {
+        max-width: 100%;
+      }
+
+      @media (max-width: 700px) {
+        .timeline-options {
+          grid-template-columns: 1fr;
+        }
+
+        .timeline-options .compact-control summary {
+          white-space: normal;
+        }
+      }
+
+      /* Janela profissional de confirmação Memora */
+      .modal-memora[hidden] {
+        display: none !important;
+      }
+
+      .modal-memora {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: rgba(0, 0, 0, 0.78);
+        backdrop-filter: blur(5px);
+      }
+      .modal-memora-card {
+        width: min(100%, 340px);
+        padding: 20px;
+        color: var(--text, #f5f1e9);
+        background: linear-gradient(145deg, #24201c, #111111);
+        border: 1px solid #c6a15b;
+        border-radius: 14px;
+        box-shadow: 0 18px 55px #0009;
+        text-align: center;
+      }
+
+      .modal-memora-icon {
+        font-size: 24px;
+        margin-bottom: 4px;
+      }
+
+      .modal-memora-card h2 {
+        font-size: 19px;
+        margin: 0 0 8px;
+      }
+
+      .modal-memora-card p {
+        font-size: 14px;
+        line-height: 1.4;
+        margin: 0 0 14px;
+      }
+
+      .modal-transicao-opcoes {
+        display: grid;
+        gap: 8px;
+      }
+
+      .modal-transicao-opcoes .btn {
+        width: 100%;
+        min-height: 38px;
+        padding: 8px 12px;
+        font-size: 13px;
+      }
+
+      .modal-memora-cancelar {
+        margin-top: 8px;
+        padding: 6px 12px;
+        font-size: 13px;
+      }
+
+      .modal-memora-cancelar:hover {
+        color: #ffffff;
+      }
+
+      .timeline-project-actions {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-left: auto;
+      }
+
+      .timeline-project-actions .btn {
+        white-space: nowrap;
+        padding: 8px 12px;
+        font-size: 13px;
+      }
+
+      @media (max-width: 700px) {
+        .timeline-project-actions {
+          width: 100%;
+          margin-left: 0;
+          display: grid;
+          grid-template-columns: 1fr;
+        }
+
+        .timeline-project-actions .btn {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <main class="page">
+      <header class="topbar">
+        <div class="brand">
+          <img src="img/memora.png" alt="Memora" />
+          <div>
+            <h1>MEMORA</h1>
+            <p>Seu diário de memórias</p>
+          </div>
+        </div>
+
+        <a class="back" href="dashboard.html">← Voltar ao diário</a>
+      </header>
+
+      <section class="intro">
+        <h2>Vídeo de Recordações</h2>
+        <p>
+          Escolha a ordem das fotografias, personalize cada cena e prepare uma
+          versão especial da história do seu evento.
+        </p>
+      </section>
+
+      <section class="workspace">
+        <!-- COLUNA ESQUERDA: EDIÇÃO -->
+        <aside class="panel">
+          <h3>
+            Editar cena
+            <span id="numeroCena" class="status-chip">Carregando</span>
+          </h3>
+
+          <div class="field">
+            <label for="textoCena">Texto desta fotografia</label>
+            <input
+              id="textoCena"
+              type="text"
+              maxlength="100"
+              placeholder="Ex.: Um momento para guardar no coração"
+            />
+            <small>
+              O texto vale apenas para a cena selecionada. Deixe vazio para não
+              mostrar texto.
+            </small>
+          </div>
+
+          <div class="edit-grid">
+            <div class="field">
+              <label for="fonteTexto">Fonte</label>
+              <select id="fonteTexto">
+                <option value="Georgia,serif">Clássica</option>
+                <option value="'Times New Roman',serif">Editorial</option>
+                <option value="Arial,sans-serif">Moderna</option>
+                <option value="'Trebuchet MS',sans-serif">Suave</option>
+                <option value="'Courier New',monospace">
+                  Máquina de escrever
+                </option>
+                <option value="cursive">Manuscrita</option>
+                <option value="Verdana,sans-serif">Limpa</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="tamanhoTexto">Tamanho</label>
+              <input
+                id="tamanhoTexto"
+                type="number"
+                min="12"
+                max="54"
+                value="30"
+              />
+            </div>
+          </div>
+
+          <div class="edit-grid">
+            <div class="field">
+              <label for="posicaoTexto">Posição vertical</label>
+              <select id="posicaoTexto">
+                <option value="bottom">Inferior</option>
+                <option value="center">Centro</option>
+                <option value="top">Superior</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="alinhamentoTexto">Alinhamento</label>
+              <select id="alinhamentoTexto">
+                <option value="left">À esquerda</option>
+                <option value="center" selected>Centralizado</option>
+                <option value="right">À direita</option>
+              </select>
+            </div>
+          </div>
+
+          <details id="paletaTexto">
+            <summary>🎨 Cor do texto e paleta</summary>
+            <div class="details-body">
+              <div class="swatches" id="amostrasTexto">
+                <button
+                  class="swatch"
+                  data-color="#ffffff"
+                  style="background: #ffffff"
+                  aria-label="Branco"
+                ></button>
+                <button
+                  class="swatch"
+                  data-color="#f3d38a"
+                  style="background: #f3d38a"
+                  aria-label="Dourado"
+                ></button>
+                <button
+                  class="swatch"
+                  data-color="#f4b6c2"
+                  style="background: #f4b6c2"
+                  aria-label="Rosa claro"
+                ></button>
+                <button
+                  class="swatch"
+                  data-color="#d6e8ff"
+                  style="background: #d6e8ff"
+                  aria-label="Azul claro"
+                ></button>
+                <button
+                  class="swatch"
+                  data-color="#171717"
+                  style="background: #171717"
+                  aria-label="Preto"
+                ></button>
+                <button
+                  class="swatch"
+                  data-color="#e6c6a8"
+                  style="background: #e6c6a8"
+                  aria-label="Champanhe"
+                ></button>
+                <button
+                  class="swatch"
+                  data-color="#d7f0d1"
+                  style="background: #d7f0d1"
+                  aria-label="Verde claro"
+                ></button>
+                <button
+                  class="swatch"
+                  data-color="#d9c9ff"
+                  style="background: #d9c9ff"
+                  aria-label="Lilás"
+                ></button>
+                <button
+                  class="swatch"
+                  data-color="#ff8d75"
+                  style="background: #ff8d75"
+                  aria-label="Coral"
+                ></button>
+                <button
+                  class="swatch"
+                  data-color="#efefef"
+                  style="background: #efefef"
+                  aria-label="Cinza claro"
+                ></button>
+              </div>
+
+              <div class="field" style="margin: 12px 0 0">
+                <label for="corTexto">Escolher qualquer cor</label>
+                <input id="corTexto" type="color" value="#ffffff" />
+              </div>
+            </div>
+          </details>
+
+          <div class="section-divider"></div>
+
+          <h3>Imagem da cena</h3>
+
+          <div class="field">
+            <label for="ajusteImagem">Enquadramento</label>
+            <select id="ajusteImagem">
+              <option value="contain">Mostrar foto inteira</option>
+              <option value="cover">Preencher a tela (recortar)</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="zoomImagem">Tamanho da foto (%)</label>
+            <input
+              id="zoomImagem"
+              type="number"
+              min="50"
+              max="400"
+              step="5"
+              value="100"
+            />
+            <small
+              >Use de 50% a 400%. Você também poderá arrastar a foto.</small
+            >
+          </div>
+
+          <div class="section-divider"></div>
+
+          <h3>Fundo da apresentação</h3>
+
+          <div class="field">
+            <label>Paleta de fundos</label>
+            <div class="swatches" id="amostrasFundo">
+              <button
+                class="swatch"
+                data-bg="#171717"
+                style="background: #171717"
+                aria-label="Preto Memora"
+              ></button>
+              <button
+                class="swatch"
+                data-bg="#38251f"
+                style="background: #38251f"
+                aria-label="Marrom romântico"
+              ></button>
+              <button
+                class="swatch"
+                data-bg="#754c5a"
+                style="background: #754c5a"
+                aria-label="Rosa antigo"
+              ></button>
+              <button
+                class="swatch"
+                data-bg="#eee4d5"
+                style="background: #eee4d5"
+                aria-label="Marfim"
+              ></button>
+              <button
+                class="swatch"
+                data-bg="#26352f"
+                style="background: #26352f"
+                aria-label="Verde elegante"
+              ></button>
+              <button
+                class="swatch"
+                data-bg="#263044"
+                style="background: #263044"
+                aria-label="Azul noturno"
+              ></button>
+              <button
+                class="swatch"
+                data-bg="#a66f46"
+                style="background: #a66f46"
+                aria-label="Terracota"
+              ></button>
+              <button
+                class="swatch"
+                data-bg="#6b6385"
+                style="background: #6b6385"
+                aria-label="Lavanda"
+              ></button>
+              <button
+                class="swatch"
+                data-bg="#8d253c"
+                style="background: #8d253c"
+                aria-label="Vinho"
+              ></button>
+              <button
+                class="swatch"
+                data-bg="#d9b985"
+                style="background: #d9b985"
+                aria-label="Champanhe"
+              ></button>
+            </div>
+          </div>
+
+          <details>
+            <summary>Cor personalizada</summary>
+            <div class="details-body">
+              <div class="field">
+                <label for="fundoCor">Escolher cor de fundo</label>
+                <input id="fundoCor" type="color" value="#171717" />
+              </div>
+            </div>
+          </details>
+
+          <div class="field">
+            <label for="fundoImagem">Ou usar uma imagem de fundo</label>
+            <input id="fundoImagem" type="file" accept="image/*" />
+            <small>Imagem pessoal usada como fundo da prévia.</small>
+            <button
+              id="removerFundoImagem"
+              type="button"
+              class="btn secondary"
+              style="margin-top: 8px"
+            >
+              Remover imagem de fundo
+            </button>
+          </div>
+        </aside>
+
+        <div class="workspace-right">
+          <!-- COLUNA DIREITA: PRÉVIA -->
+          <section class="preview-panel">
+            <h3>Prévia do vídeo</h3>
+
+            <div id="telaVideo" class="screen" data-arrastavel="true">
+              <img
+                id="fotoVideo"
+                class="screen-photo"
+                alt="Prévia da fotografia selecionada"
+                hidden
+              />
+              <div id="textoSobreposto" class="screen-caption"></div>
+            </div>
+
+            <p
+              id="statusVideo"
+              class="preview-status"
+              role="status"
+              aria-live="polite"
+            >
+              Carregando suas fotografias...
+            </p>
+          </section>
+
+          <!-- COLUNA DIREITA, LINHA 2: CONTROLES E TIMELINE -->
+          <section class="timeline-panel">
+            <div class="player-controls timeline-player-controls">
+              <button id="iniciar" class="btn" type="button" disabled>
+                ▶ Reproduzir
+              </button>
+
+              <button id="pausar" class="btn secondary" type="button" disabled>
+                Ⅱ Pausar
+              </button>
+
+              <button
+                id="anterior"
+                class="btn secondary"
+                type="button"
+                disabled
+              >
+                ‹ Cena anterior
+              </button>
+
+              <button id="proxima" class="btn secondary" type="button" disabled>
+                Próxima cena ›
+              </button>
+            </div>
+
+            <div class="timeline-head">
+              <h3>
+                Linha do tempo
+                <span id="totalCenas" class="status-chip">0 cenas</span>
+              </h3>
+
+              <span class="timeline-note">
+                Selecione uma cena para editar. Arraste as miniaturas para mudar
+                a ordem.
+              </span>
+            </div>
+
+            <div class="timeline-scroll" id="timelineScroll">
+              <div class="timeline-ruler" aria-label="Régua de tempo">
+                <div class="timeline-ruler-content" id="timelineRuler"></div>
+              </div>
+              <div
+                id="linhaTempo"
+                class="timeline-track"
+                aria-label="Linha do tempo das fotografias"
+              >
+                <div
+                  class="timeline-playhead"
+                  id="timelinePlayhead"
+                  aria-hidden="true"
+                ></div>
+              </div>
+            </div>
+
+            <div class="timeline-options">
+              <details class="compact-control" id="painelDuracao">
+                <summary>
+                  ⏱ Duração: <span id="duracaoResumo">7 s</span>
+                </summary>
+                <div class="details-body">
+                  <label for="duracaoCena">Duração (segundos)</label>
+                  <input
+                    id="duracaoCena"
+                    type="number"
+                    min="2"
+                    max="20"
+                    step="1"
+                    value="7"
+                    inputmode="numeric"
+                  />
+                  <small id="duracaoValor">
+                    Digite um valor entre 2 e 20 segundos.
+                  </small>
+                </div>
+              </details>
+
+              <details class="compact-control" id="painelTransicao">
+                <summary>
+                  ✨ Transição: <span id="transicaoResumo">Dissolver</span>
+                </summary>
+                <div class="details-body">
+                  <label for="transicaoCena">Efeito de entrada</label>
+                  <select id="transicaoCena">
+                    <option value="fade">Dissolver (fade)</option>
+                    <option value="slide">Deslizar</option>
+                    <option value="zoom">Zoom suave</option>
+                    <option value="none">Corte direto</option>
+                  </select>
+                  <small>
+                    O efeito poderá ser aplicado à cena ou a todas.
+                  </small>
+                </div>
+              </details>
+
+              <details
+                class="compact-control audio-compact"
+                id="painelAudioTimeline"
+              >
+                <summary>♫ Áudio: adicionar música</summary>
+                <div class="details-body">
+                  <label for="musicaArquivo">Importar minha música</label>
+                  <input id="musicaArquivo" type="file" accept="audio/*" />
+
+                  <audio
+                    id="audioMusica"
+                    class="audio-preview"
+                    controls
+                    hidden
+                  ></audio>
+
+                  <button
+                    id="removerMusica"
+                    type="button"
+                    class="btn secondary"
+                    style="margin-top: 8px"
+                  >
+                    Remover música
+                  </button>
+                </div>
+              </details>
+
+              <div class="timeline-project-actions">
+                <button id="salvarProjeto" class="btn" type="button">
+                  💾 Salvar projeto
+                </button>
+
+                <button
+                  id="compartilharProjeto"
+                  class="btn secondary"
+                  type="button"
+                >
+                  ↗ Compartilhar
+                </button>
+
+                <button id="baixarVideo" class="btn secondary" type="button">
+                  ⬇ Baixar vídeo MP4
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <!-- Modal de confirmação da transição -->
+      <div id="modalTransicao" class="modal-memora" hidden>
+        <div
+          class="modal-memora-card"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="tituloModalTransicao"
+          aria-describedby="textoModalTransicao"
+        >
+          <div class="modal-memora-icon">✦</div>
+
+          <h2 id="tituloModalTransicao">Aplicar transição</h2>
+
+          <p id="textoModalTransicao">
+            Como deseja aplicar o efeito escolhido?
+          </p>
+
+          <div class="modal-transicao-opcoes">
+            <button id="aplicarTransicaoTodas" type="button" class="btn">
+              Todas as cenas
+            </button>
+
+            <button
+              id="aplicarTransicaoAtual"
+              type="button"
+              class="btn secondary"
+            >
+              Somente esta cena
+            </button>
+          </div>
+
+          <button
+            id="cancelarModalTransicao"
+            type="button"
+            class="modal-memora-cancelar"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+
+      <footer class="footer">
+        Memora — suas histórias merecem ser lembradas.
+      </footer>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="video-recordacoes.js"></script>
+  </body>
+</html>

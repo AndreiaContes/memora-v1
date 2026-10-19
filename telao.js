@@ -7,7 +7,9 @@ const fotoTelao = document.getElementById("fotoTelao");
 const frame = document.getElementById("frame");
 const contador = document.getElementById("contadorFotos");
 
-const evento = "default";
+const parametrosURL = new URLSearchParams(window.location.search);
+const evento = parametrosURL.get("evento") || "default";
+
 let fotos = [];
 let indexAtual = 0;
 
@@ -21,6 +23,7 @@ client
       event: "INSERT",
       schema: "public",
       table: "curtidas",
+      filter: `evento=eq.${evento}`,
     },
     (payload) => {
       console.log("CURTIDA RECEBIDA:", payload);
@@ -70,7 +73,3 @@ carregarFotos().then(mostrarFoto);
 setInterval(mostrarFoto, 7000);
 setInterval(carregarFotos, 30000);
 
-setTimeout(() => {
-  console.log("TESTE MANUAL");
-  exibirCoracaoNaTela();
-}, 3000);

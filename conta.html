@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#171717" />
+    <title>Minha conta | Memora</title>
+
+    <style>
+      :root {
+        --dourado: #c6a15b;
+        --preto: #171717;
+        --fundo: #f7f4ef;
+        --texto: #292929;
+        --borda: #e4ded4;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        padding: 24px;
+        display: grid;
+        place-items: center;
+
+        background-color: var(--fundo);
+        background-image: url("img/fundo-editar-album.png");
+        background-position: center;
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+
+        color: var(--texto);
+        font-family: Arial, Helvetica, sans-serif;
+      }
+
+      .conta-container {
+        width: 100%;
+        max-width: 440px;
+        padding: 32px;
+        background: rgba(23, 23, 23, 0.97);
+        border: 1px solid rgba(198, 161, 91, 0.45);
+        border-radius: 18px;
+        box-shadow: 0 16px 45px rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(5px);
+      }
+
+      .marca {
+        text-align: center;
+        margin-bottom: 26px;
+      }
+
+      .marca img {
+        display: block;
+        width: 100px;
+        max-height: 90px;
+        object-fit: contain;
+        margin: 0 auto 12px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        color: var(--preto);
+        font-size: 27px;
+        text-align: center;
+      }
+
+      .subtitulo {
+        color: #777;
+        text-align: center;
+        font-size: 14px;
+        line-height: 1.5;
+        margin-bottom: 24px;
+      }
+
+      .abas {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+
+      button,
+      input {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      .aba {
+        border: 1px solid var(--borda);
+        background: #fff;
+        border-radius: 8px;
+        padding: 11px 8px;
+        color: #555;
+      }
+
+      .aba.ativa {
+        color: #fff;
+        background: var(--preto);
+        border-color: var(--preto);
+      }
+
+      .campo {
+        margin-bottom: 16px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 7px;
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      input {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #d8d3cb;
+        border-radius: 8px;
+        outline: none;
+        background: #fff;
+      }
+
+      input:focus {
+        border-color: var(--dourado);
+        box-shadow: 0 0 0 3px #c6a15b22;
+      }
+
+      .botao-principal {
+        width: 100%;
+        padding: 13px;
+        border: 0;
+        border-radius: 8px;
+        background: var(--preto);
+        color: #fff;
+        font-weight: 700;
+        margin-top: 4px;
+      }
+
+      .botao-principal:hover {
+        background: #333;
+      }
+
+      .botao-principal:disabled {
+        opacity: 0.6;
+        cursor: wait;
+      }
+
+      .link {
+        display: block;
+        margin-top: 18px;
+        border: 0;
+        padding: 0;
+        background: transparent;
+        color: #73551e;
+        text-decoration: underline;
+        font-size: 14px;
+        text-align: center;
+        width: 100%;
+      }
+
+      .mensagem {
+        display: none;
+        padding: 12px;
+        border-radius: 8px;
+        margin: 0 0 18px;
+        font-size: 14px;
+        line-height: 1.5;
+        overflow-wrap: anywhere;
+      }
+
+      .mensagem.sucesso {
+        display: block;
+        background: #edf8ef;
+        color: #205b2c;
+      }
+
+      .mensagem.erro {
+        display: block;
+        background: #fff0ef;
+        color: #9d2923;
+      }
+
+      .rodape {
+        text-align: center;
+        font-size: 12px;
+        color: #888;
+        margin-top: 24px;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      @media (max-width: 480px) {
+        body {
+          padding: 14px;
+        }
+
+        .conta-container {
+          padding: 24px 20px;
+        }
+      }
+
+      h1 {
+        color: var(--dourado);
+      }
+
+      .subtitulo {
+        color: #d0cbc3;
+      }
+
+      .rodape {
+        color: #b8b0a4;
+      }
+
+      label {
+        color: #f2eee7;
+      }
+
+      input {
+        background: #292929;
+        color: #ffffff;
+        border-color: #51483a;
+      }
+
+      input::placeholder {
+        color: #b8b1a7;
+      }
+
+      input:focus {
+        border-color: var(--dourado);
+        box-shadow: 0 0 0 3px #c6a15b33;
+      }
+
+      .aba {
+        background: #292929;
+        border-color: #51483a;
+        color: #e5ded3;
+      }
+
+      .aba.ativa {
+        background: var(--dourado);
+        border-color: var(--dourado);
+        color: #171717;
+      }
+
+      .botao-principal {
+        background: var(--dourado);
+        color: #171717;
+      }
+
+      .botao-principal:hover {
+        background: #d7b875;
+      }
+
+      .link {
+        color: #e0bd78;
+      }
+
+      body {
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      .conta-container {
+        margin-top: auto;
+        margin-bottom: auto;
+      }
+    </style>
+  </head>
+
+  <body>
+    <main class="conta-container">
+      <header class="marca">
+        <img
+          src="img/memora.png"
+          alt="Memora"
+          onerror="this.style.display = 'none'"
+        />
+
+        <h1 id="tituloConta">Bem-vinda ao Memora</h1>
+        <p class="subtitulo" id="subtituloConta">
+          Suas memórias, guardadas com carinho.
+        </p>
+      </header>
+
+      <div
+        id="mensagemConta"
+        class="mensagem"
+        role="status"
+        aria-live="polite"
+      ></div>
+
+      <div class="abas" id="abasConta">
+        <button type="button" class="aba ativa" id="abaLogin">Entrar</button>
+        <button type="button" class="aba" id="abaCadastro">Criar conta</button>
+      </div>
+
+      <form id="formLogin">
+        <div class="campo">
+          <label for="emailLogin">E-mail</label>
+          <input
+            id="emailLogin"
+            type="email"
+            autocomplete="email"
+            required
+            placeholder="seu@email.com"
+          />
+        </div>
+
+        <div class="campo">
+          <label for="senhaLogin">Senha</label>
+          <input
+            id="senhaLogin"
+            type="password"
+            autocomplete="current-password"
+            required
+            placeholder="Sua senha"
+          />
+        </div>
+
+        <button class="botao-principal" type="submit">
+          Entrar na minha conta
+        </button>
+
+        <button class="link" type="button" id="abrirRecuperacao">
+          Esqueci minha senha
+        </button>
+      </form>
+
+      <form id="formCadastro" hidden>
+        <div class="campo">
+          <label for="nomeCadastro">Nome</label>
+          <input
+            id="nomeCadastro"
+            type="text"
+            autocomplete="name"
+            required
+            maxlength="100"
+            placeholder="Seu nome"
+          />
+        </div>
+
+        <div class="campo">
+          <label for="emailCadastro">E-mail</label>
+          <input
+            id="emailCadastro"
+            type="email"
+            autocomplete="email"
+            required
+            placeholder="seu@email.com"
+          />
+        </div>
+
+        <div class="campo">
+          <label for="senhaCadastro">Crie uma senha</label>
+          <input
+            id="senhaCadastro"
+            type="password"
+            autocomplete="new-password"
+            required
+            minlength="8"
+            placeholder="Mínimo de 8 caracteres"
+          />
+        </div>
+
+        <div class="campo">
+          <label for="confirmarSenha">Confirme a senha</label>
+          <input
+            id="confirmarSenha"
+            type="password"
+            autocomplete="new-password"
+            required
+            minlength="8"
+            placeholder="Digite novamente"
+          />
+        </div>
+
+        <button class="botao-principal" type="submit">Criar minha conta</button>
+      </form>
+
+      <form id="formRecuperacao" hidden>
+        <p>Informe seu e-mail para receber as instruções de recuperação.</p>
+
+        <div class="campo">
+          <label for="emailRecuperacao">E-mail cadastrado</label>
+          <input
+            id="emailRecuperacao"
+            type="email"
+            autocomplete="email"
+            required
+            placeholder="seu@email.com"
+          />
+        </div>
+
+        <button class="botao-principal" type="submit">
+          Enviar link de recuperação
+        </button>
+
+        <button class="link" type="button" id="voltarLoginRecuperacao">
+          Voltar para entrar
+        </button>
+      </form>
+
+      <form id="formNovaSenha" hidden>
+        <p>Escolha uma nova senha para sua conta.</p>
+
+        <div class="campo">
+          <label for="novaSenha">Nova senha</label>
+          <input
+            id="novaSenha"
+            type="password"
+            autocomplete="new-password"
+            required
+            minlength="8"
+            placeholder="Mínimo de 8 caracteres"
+          />
+        </div>
+
+        <div class="campo">
+          <label for="confirmarNovaSenha">Confirme a nova senha</label>
+          <input
+            id="confirmarNovaSenha"
+            type="password"
+            autocomplete="new-password"
+            required
+            minlength="8"
+            placeholder="Digite novamente"
+          />
+        </div>
+
+        <button class="botao-principal" type="submit">Salvar nova senha</button>
+      </form>
+
+      <p class="rodape">Memora — suas histórias merecem ser lembradas.</p>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="conta.js"></script>
+  </body>
+</html>

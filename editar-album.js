@@ -4,6 +4,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const BUCKET = "fotos-eventos";
 const EVENTO = new URLSearchParams(location.search).get("evento") || "default";
+const EVENTO_ID = new URLSearchParams(location.search).get("eventoId");
 const LOTE_FOTOS = 12;
 const FOTOS_POR_PAGINA = 2;
 
@@ -1961,4 +1962,90 @@ document
     botaoVisualizar.click();
   });
 
-carregarFotos();
+async function validarAcessoECarregarFotos() {
+  const { data: sessaoData, error: erroSessao } =
+    await supabaseClient.auth.getSession();
+
+  const sessao = sessaoData?.session;
+
+  if (erroSessao || !sessao) {
+    window.location.replace("conta.html");
+    return;
+  }
+
+  if (!EVENTO_ID) {
+    window.location.replace("dashboard.html");
+    return;
+  }
+
+  const { data: evento, error } = await supabaseClient
+    .from("eventos")
+    .select("id, nome, slug, storage_folder, evento_ativo, owner_id")
+    .eq("id", EVENTO_ID)
+    .eq("owner_id", sessao.user.id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Erro ao validar o evento:", error);
+    alert("Não foi possível validar seu acesso ao evento.");
+    window.location.replace("dashboard.html");
+    return;
+  }
+
+  if (!evento || evento.evento_ativo !== true) {
+    alert("Você não tem acesso a este evento ou ele está inativo.");
+    window.location.replace("dashboard.html");
+    return;
+  }
+
+  if ((evento.storage_folder || evento.slug) !== EVENTO) {
+    alert("O endereço não corresponde ao evento selecionado.");
+    window.location.replace("dashboard.html");
+    return;
+  }
+
+  await carregarFotos();
+}
+
+validarAcessoECarregarFotos();
+
+
+function adicionarBotaoVoltarDashboard() {
+  if (document.getElementById("memora-voltar-dashboard")) return;
+
+  const botao = document.createElement("a");
+  botao.id = "memora-voltar-dashboard";
+  botao.href = "dashboard.html";
+  botao.textContent = "← Voltar ao painel";
+  botao.setAttribute("aria-label", "Voltar ao Dashboard do Memora");
+
+  Object.assign(botao.style, {
+    position: "fixed",
+    top: "16px",
+    left: "16px",
+    zIndex: "10000",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "11px 16px",
+    border: "1px solid #c6a15b",
+    borderRadius: "10px",
+    background: "rgba(23, 23, 23, 0.96)",
+    color: "#e4c783",
+    font: "600 14px Arial, sans-serif",
+    textDecoration: "none",
+    boxShadow: "0 4px 16px rgba(0,0,0,0.3)"
+  });
+
+  document.body.appendChild(botao);
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener(
+    "DOMContentLoaded",
+    adicionarBotaoVoltarDashboard
+  );
+} else {
+  adicionarBotaoVoltarDashboard();
+}
+

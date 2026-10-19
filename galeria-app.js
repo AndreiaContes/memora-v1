@@ -172,3 +172,44 @@ document.addEventListener("keydown", (event) => {
 
 carregarFotos();
 setInterval(carregarFotos, 30000);
+
+
+function adicionarBotaoVoltarDashboard() {
+  if (document.getElementById("memora-voltar-dashboard")) return;
+
+  const botao = document.createElement("a");
+  botao.id = "memora-voltar-dashboard";
+  botao.href = "dashboard.html";
+  botao.textContent = "← Voltar ao painel";
+  botao.setAttribute("aria-label", "Voltar ao Dashboard do Memora");
+
+  Object.assign(botao.style, {
+    position: "fixed",
+    top: "16px",
+    left: "16px",
+    zIndex: "10000",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "11px 16px",
+    border: "1px solid #c6a15b",
+    borderRadius: "10px",
+    background: "rgba(23, 23, 23, 0.96)",
+    color: "#e4c783",
+    font: "600 14px Arial, sans-serif",
+    textDecoration: "none",
+    boxShadow: "0 4px 16px rgba(0,0,0,0.3)"
+  });
+
+  document.body.appendChild(botao);
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener(
+    "DOMContentLoaded",
+    adicionarBotaoVoltarDashboard
+  );
+} else {
+  adicionarBotaoVoltarDashboard();
+}
+

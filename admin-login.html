@@ -63,25 +63,28 @@
             return;
           }
 
-          const { data, error } = await client
-            .from("eventos")
-            .select("*")
-            .eq("senha", senha)
-            .eq("evento_ativo", true)
-            .single();
+          const { data, error } = await client.rpc("validar_acesso_evento", {
+            p_senha: senha,
+          });
 
-          if (error || !data) {
-            console.error("Erro login:", error);
+          const eventoValidado = data?.[0];
+
+          if (error || !eventoValidado) {
+            console.error("Erro ao validar acesso ao evento:", error);
             errorText.textContent = "Senha incorreta. Tente novamente.";
             errorText.style.display = "block";
             return;
           }
 
           sessionStorage.setItem("memora_admin", "autenticado");
-          sessionStorage.setItem("evento_slug", data.slug);
-          sessionStorage.setItem("evento_nome", data.nome);
-          sessionStorage.setItem("evento_id", data.id);
-
+          sessionStorage.setItem("evento_slug", eventoValidado.slug);
+          sessionStorage.setItem("evento_nome", eventoValidado.nome);
+          sessionStorage.setItem("evento_id", eventoValidado.id);
+          sessionStorage.setItem(
+            "evento_storage_folder",
+            eventoValidado.storage_folder,
+          );
+          
           window.location.href = `admin.html?evento=${data.slug}`;
         });
     </script>
