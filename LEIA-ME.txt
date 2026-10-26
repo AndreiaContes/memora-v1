@@ -1,0 +1,22 @@
+MEMORA — MURAL DE RECADOS
+
+Arquivos incluídos:
+- mural.html       Página pública do mural para os convidados.
+- mural.js         Envio de recados e exibição de mensagens aprovadas.
+- mural-admin.html Área privada de moderação para o proprietário do evento.
+- mural-admin.js   Aprovar, rejeitar e excluir mensagens.
+
+INSTALAÇÃO
+1. Faça backup dos arquivos do projeto.
+2. Copie os quatro arquivos para a raiz de Memora.v1, junto de dashboard.html e conta.html.
+3. Em mural.js e mural-admin.js, substitua COLE_AQUI_SUA_CHAVE_PUBLICA pela mesma chave publicável já usada em conta.js.
+4. Abra as páginas sempre com o parâmetro eventoId contendo o UUID do evento.
+   Exemplo: mural.html?eventoId=UUID_DO_EVENTO
+            mural-admin.html?eventoId=UUID_DO_EVENTO
+5. Ainda será necessário acrescentar o link para o mural no Dashboard e no Fabapp após os testes locais.
+
+IMPORTANTE
+- Não use chave service_role/secret no navegador.
+- Teste o envio, a aprovação, a rejeição e a exclusão com um evento de teste.
+- A moderação é protegida por autenticação e pelas políticas RLS do Supabase.
+- A galeria pública só lê mensagens aprovadas pela função listar_mensagens_aprovadas.

@@ -91,12 +91,126 @@
             <span class="star-icon">✦</span>
             <p>Suas fotos serão exibidas na galeria e no telão do evento.</p>
           </div>
+
+          <!-- MURAL DE RECADOS DOS CONVIDADOS -->
+          <section
+            id="secaoMuralConvidado"
+            style="
+              margin-top: 28px;
+              padding: 22px;
+              border: 1px solid #c6a15b;
+              border-radius: 16px;
+              background: rgba(20, 17, 15, 0.92);
+              color: #fff5e5;
+            "
+          >
+            <h2 style="color: #d6b16a; margin-top: 0">Deixe seu recado</h2>
+
+            <p style="line-height: 1.6">
+              Compartilhe uma lembrança, uma mensagem de carinho ou um desejo
+              especial para este evento.
+            </p>
+
+            <form id="formMuralConvidado">
+              <label
+                for="nomeRecado"
+                style="display: block; margin: 16px 0 6px"
+              >
+                Seu nome
+              </label>
+
+              <input
+                id="nomeRecado"
+                name="nome"
+                type="text"
+                minlength="2"
+                maxlength="80"
+                placeholder="Como podemos identificar você?"
+                autocomplete="name"
+                required
+                style="
+                  box-sizing: border-box;
+                  width: 100%;
+                  padding: 12px;
+                  border: 1px solid #776044;
+                  border-radius: 8px;
+                  background: #292725;
+                  color: #fff;
+                "
+              />
+
+              <label
+                for="mensagemRecado"
+                style="display: block; margin: 18px 0 6px"
+              >
+                Sua mensagem
+              </label>
+
+              <textarea
+                id="mensagemRecado"
+                name="mensagem"
+                minlength="3"
+                maxlength="1000"
+                rows="5"
+                placeholder="Escreva sua lembrança ou dedicatória..."
+                required
+                style="
+                  box-sizing: border-box;
+                  width: 100%;
+                  padding: 12px;
+                  border: 1px solid #776044;
+                  border-radius: 8px;
+                  background: #292725;
+                  color: #fff;
+                  resize: vertical;
+                "
+              ></textarea>
+
+              <div
+                id="contadorMensagem"
+                style="margin-top: 5px; text-align: right; font-size: 12px"
+              >
+                0 / 1000
+              </div>
+
+              <button
+                id="enviarRecado"
+                type="submit"
+                style="
+                  margin-top: 16px;
+                  padding: 12px 20px;
+                  border: 1px solid #d6b16a;
+                  border-radius: 8px;
+                  background: #c6a15b;
+                  color: #21170b;
+                  font-weight: bold;
+                  cursor: pointer;
+                "
+              >
+                Enviar mensagem
+              </button>
+
+              <p
+                id="statusMural"
+                role="status"
+                aria-live="polite"
+                style="margin-top: 14px; line-height: 1.5"
+              ></p>
+            </form>
+
+            <p style="font-size: 12px; line-height: 1.5; color: #d8cdbd">
+              Sua mensagem ficará aguardando aprovação do responsável pelo
+              evento antes de aparecer no mural de recordações.
+            </p>
+          </section>
+          <!-- FIM DO MURAL DE RECADOS -->
         </main>
       </div>
     </div>
 
     <!-- 1. Carregar a biblioteca do Supabase primeiro -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="mural-convidado.js"></script>
 
     <script src="album.js"></script>
   </body>

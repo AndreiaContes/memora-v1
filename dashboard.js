@@ -84,7 +84,15 @@ function criarCartaoEvento(evento) {
     evento,
     "botao-secundario",
   );
-  acoes.append(linkGaleria, linkEditor, linkTelao, linkVideo);
+  const linkMural = criarLinkEvento(
+    "Mural de Recados",
+    "mural-admin.html",
+    evento,
+    "botao-secundario",
+  );
+
+  acoes.append(linkGaleria, linkEditor, linkTelao, linkVideo, linkMural);
+
   cartao.append(icone, titulo, descricao, status, acoes);
 
   return cartao;

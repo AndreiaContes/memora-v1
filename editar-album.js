@@ -1,10 +1,12 @@
 const SUPABASE_URL = "https://rakktbwnybrsvqpbgaid.supabase.co";
 const SUPABASE_KEY = "sb_publishable_tLqbug91hIKbyGJHv4V8kA_HbjCmKiL";
+
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const BUCKET = "fotos-eventos";
 const EVENTO = new URLSearchParams(location.search).get("evento") || "default";
-const EVENTO_ID = new URLSearchParams(location.search).get("eventoId");
+const EVENTO_ID = new URLSearchParams(location.search).get("eventoId") || "";
+
 const LOTE_FOTOS = 12;
 const FOTOS_POR_PAGINA = 2;
 
@@ -17,17 +19,31 @@ const botaoSelecionarTodas = document.getElementById("selecionarTodas");
 const botaoLimparSelecao = document.getElementById("limparSelecao");
 const botaoVisualizar = document.getElementById("visualizarAlbum");
 const botaoVoltar = document.getElementById("voltarEdicao");
-const botaoPdf = document.getElementById("baixarPdf");
 const previaCapa = document.getElementById("previaCapa");
 const previaAlbum = document.getElementById("previaAlbum");
 const mensagemFinal = document.getElementById("mensagemFinal");
+
+const seletorPosicaoMural = document.getElementById("posicaoMuralAlbum");
+const botaoAdicionarMural = document.getElementById("adicionarMuralAlbum");
+const botaoRemoverMural = document.getElementById("removerMuralAlbum");
+const statusMuralAlbum = document.getElementById("statusMuralAlbum");
+
 const ajustesFotosCapa = new Map();
 const posicoesTextosCapa = new Map();
 const layoutsPaginas = new Map();
+const tiposPaginas = new Map();
 const ajustesFotosInternas = new Map();
 const elementosMemoriaPaginas = new Map();
+const posicoesFotosPagina = new Map(); // deslocamento de cada foto pela página (em % da largura)
+let ordemAlbum = []; // ordem das fotos no álbum (permite trocar uma foto por outra)
 
 let layoutPadraoAlbum = "elegante";
+let mensagensMuralAlbum = [];
+let nomeEventoMuralAlbum = "";
+let muralAdicionadoAoAlbum = false;
+let posicaoMuralAposPaginaFoto = 0;
+let muralAlbumCarregado = false;
+
 let fotos = [];
 let paginaAtual = 0;
 let fotoCapa = null;
@@ -39,121 +55,6 @@ let ajusteFotoCapa = { x: 0, y: 0, zoom: 1, rotacao: 0 };
 const selecionadas = new Set();
 const urlsFotos = new Map();
 
-const chaveRascunho = `memora-rascunho-${EVENTO}`;
-
-function salvarRascunho() {
-  const rascunho = {
-    titulo: document.getElementById("titulo").value,
-    nomes: document.getElementById("nomes").value,
-    dataEvento: document.getElementById("dataEvento").value,
-    fraseCapa: document.getElementById("fraseCapa").value,
-    corTexto: document.getElementById("corTexto").value,
-    selecionadas: [...selecionadas],
-    fotoCapa,
-    usarFotoNaCapa,
-    modeloCapa,
-    layoutPadraoAlbum,
-    posicoesTextosCapa: [...posicoesTextosCapa.entries()],
-    layoutsPaginas: [...layoutsPaginas.entries()],
-    ajustesFotosCapa: [...ajustesFotosCapa.entries()],
-    ajustesFotosInternas: [...ajustesFotosInternas.entries()],
-    elementosMemoriaPaginas: [...elementosMemoriaPaginas.entries()],
-    salvoEm: new Date().toISOString(),
-  };
-
-  try {
-    localStorage.setItem(chaveRascunho, JSON.stringify(rascunho));
-
-    const statusSalvamento = document.getElementById("statusSalvamento");
-    if (statusSalvamento) {
-      statusSalvamento.textContent = `Rascunho salvo neste navegador às ${new Date().toLocaleTimeString(
-        "pt-BR",
-        {
-          hour: "2-digit",
-          minute: "2-digit",
-        },
-      )}.`;
-    }
-  } catch (erro) {
-    console.error("Erro ao salvar o rascunho:", erro);
-
-    const statusSalvamento = document.getElementById("statusSalvamento");
-    if (statusSalvamento) {
-      statusSalvamento.textContent =
-        "Não foi possível salvar o rascunho neste navegador.";
-    }
-  }
-}
-
-function restaurarRascunho() {
-  try {
-    const textoSalvo = localStorage.getItem(chaveRascunho);
-    if (!textoSalvo) return;
-
-    const rascunho = JSON.parse(textoSalvo);
-
-    document.getElementById("titulo").value = rascunho.titulo || "";
-    document.getElementById("nomes").value = rascunho.nomes || "";
-    document.getElementById("dataEvento").value = rascunho.dataEvento || "";
-    document.getElementById("fraseCapa").value = rascunho.fraseCapa || "";
-    document.getElementById("corTexto").value = rascunho.corTexto || "auto";
-
-    selecionadas.clear();
-    (rascunho.selecionadas || []).forEach((nome) => {
-      if (fotos.some((foto) => foto.name === nome)) {
-        selecionadas.add(nome);
-      }
-    });
-
-    fotoCapa = fotos.some((foto) => foto.name === rascunho.fotoCapa)
-      ? rascunho.fotoCapa
-      : null;
-
-    usarFotoNaCapa = Boolean(fotoCapa && rascunho.usarFotoNaCapa);
-    modeloCapa = fundosCapa[rascunho.modeloCapa]
-      ? rascunho.modeloCapa
-      : "classico";
-    layoutPadraoAlbum = rascunho.layoutPadraoAlbum || "elegante";
-
-    posicoesTextosCapa.clear();
-    (rascunho.posicoesTextosCapa || []).forEach(([chave, valor]) => {
-      posicoesTextosCapa.set(chave, valor);
-    });
-
-    layoutsPaginas.clear();
-    (rascunho.layoutsPaginas || []).forEach(([chave, valor]) => {
-      layoutsPaginas.set(chave, valor);
-    });
-
-    ajustesFotosCapa.clear();
-    (rascunho.ajustesFotosCapa || []).forEach(([chave, valor]) => {
-      ajustesFotosCapa.set(chave, valor);
-    });
-
-    ajustesFotosInternas.clear();
-    (rascunho.ajustesFotosInternas || []).forEach(([chave, valor]) => {
-      ajustesFotosInternas.set(chave, valor);
-    });
-
-    elementosMemoriaPaginas.clear();
-    (rascunho.elementosMemoriaPaginas || []).forEach(([chave, valor]) => {
-      elementosMemoriaPaginas.set(chave, valor);
-    });
-
-    document.querySelectorAll(".modelo-capa").forEach((botao) => {
-      const ativo = botao.dataset.modelo === modeloCapa;
-      botao.classList.toggle("ativo", ativo);
-      botao.setAttribute("aria-pressed", String(ativo));
-    });
-
-    const seletorLayout = document.getElementById("layoutPadrao");
-    if (seletorLayout) seletorLayout.value = layoutPadraoAlbum;
-
-    atualizarQuantidade();
-  } catch (erro) {
-    console.error("Erro ao restaurar o rascunho:", erro);
-  }
-}
 const fundosCapa = {
   classico: "img/capas/capa-classica.png",
   minimalista: "img/capas/capa-minimalista.png",
@@ -161,6 +62,7 @@ const fundosCapa = {
   moderno: "img/capas/capa-moderna.png",
   fotografico: "img/capas/capa-fotografica.png",
   contemporaneo: "img/capas/capa-contemporanea.png",
+  mural: "img/mural-postits-sem-texto.png",
 };
 
 const coresAutomaticas = {
@@ -170,7 +72,12 @@ const coresAutomaticas = {
   moderno: "#d8b15a",
   fotografico: "#57351f",
   contemporaneo: "#57351f",
+  mural: "#ffffff",
 };
+
+/* =========================================================
+   FOTOGRAFIAS DO EVENTO
+========================================================= */
 
 async function carregarFotos() {
   status.textContent = "Carregando fotografias do evento...";
@@ -202,9 +109,7 @@ async function carregarFotos() {
       return;
     }
 
-    restaurarRascunho();
     renderizarPagina();
-    renderizarCapa();
   } catch (erro) {
     console.error("Erro ao carregar fotografias:", erro);
     status.textContent =
@@ -242,7 +147,6 @@ function renderizarPagina() {
     imagem.alt = "Fotografia do evento";
     imagem.loading = "lazy";
 
-    // Controle independente: incluir nas páginas do álbum
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.value = foto.name;
@@ -251,7 +155,6 @@ function renderizarPagina() {
     const labelSelecao = document.createElement("label");
     labelSelecao.append(checkbox, document.createTextNode(" Incluir no álbum"));
 
-    // Controle independente: usar na capa
     const checkboxCapa = document.createElement("input");
     checkboxCapa.type = "checkbox";
     checkboxCapa.value = foto.name;
@@ -268,7 +171,6 @@ function renderizarPagina() {
         selecionadas.delete(foto.name);
       }
 
-      // Não altera a escolha da capa.
       atualizarQuantidade();
       atualizarPreviaExistente();
     });
@@ -278,7 +180,6 @@ function renderizarPagina() {
         usarFotoNaCapa = true;
         fotoCapa = foto.name;
 
-        // Atualiza os controles de capa visíveis na página.
         galeria
           .querySelectorAll('.foto-item input[data-controle="capa"]')
           .forEach((controle) => {
@@ -340,6 +241,7 @@ botaoAnterior.addEventListener("click", () => {
 
 botaoProxima.addEventListener("click", () => {
   const totalPaginas = Math.ceil(fotos.length / LOTE_FOTOS);
+
   if (paginaAtual < totalPaginas - 1) {
     paginaAtual++;
     renderizarPagina();
@@ -348,7 +250,10 @@ botaoProxima.addEventListener("click", () => {
 
 botaoSelecionarTodas.addEventListener("click", () => {
   fotos.forEach((foto) => selecionadas.add(foto.name));
-  if (!fotoCapa && fotos.length) fotoCapa = fotos[0].name;
+
+  if (!fotoCapa && fotos.length) {
+    fotoCapa = fotos[0].name;
+  }
 
   renderizarPagina();
   atualizarPreviaExistente();
@@ -362,16 +267,24 @@ botaoLimparSelecao.addEventListener("click", () => {
 
   renderizarPagina();
   renderizarCapa();
+
   previaAlbum.replaceChildren();
   previaAlbum.hidden = true;
   botaoVoltar.hidden = true;
   mensagemFinal.textContent = "";
 });
 
+/* =========================================================
+   CAPA DO ÁLBUM
+========================================================= */
+
 function formatarData(valor) {
   if (!valor) return "";
+
   const partes = valor.split("-");
+
   if (partes.length !== 3) return valor;
+
   return `${partes[2]}/${partes[1]}/${partes[0]}`;
 }
 
@@ -384,7 +297,6 @@ function renderizarCapa() {
       : null;
 
   const modelo = fundosCapa[modeloCapa] ? modeloCapa : "classico";
-
   const campoCor = document.getElementById("corTexto");
   const campoFrase = document.getElementById("fraseCapa");
 
@@ -397,7 +309,20 @@ function renderizarCapa() {
   capa.style.backgroundImage = `url("${fundosCapa[modelo]}")`;
   capa.style.setProperty("--cor-texto-capa", corTexto);
 
-  // Textos da capa
+  if (modelo === "mural") {
+    const mural = criarPaginaMuralAlbum(mensagensMuralAlbum.slice(0, 15), 1);
+
+    capa.classList.add("capa-mural-preview");
+    capa.style.backgroundImage = 'url("img/mural-postits-sem-texto.png")';
+
+    while (mural.firstChild) {
+      capa.appendChild(mural.firstChild);
+    }
+
+    previaCapa.appendChild(capa);
+    return;
+  }
+
   const conteudo = document.createElement("div");
   conteudo.className = "conteudo-capa";
 
@@ -436,7 +361,6 @@ function renderizarCapa() {
     const posicao = posicoesTextosCapa.get(chave);
 
     elemento.style.transform = `translate(${posicao.x}px, ${posicao.y}px)`;
-
     elemento.style.cursor = "grab";
     elemento.style.touchAction = "none";
     elemento.style.userSelect = "none";
@@ -460,7 +384,6 @@ function renderizarCapa() {
       origemY = atual.y;
 
       elemento.style.cursor = "grabbing";
-
       elemento.setPointerCapture(evento.pointerId);
     });
 
@@ -475,7 +398,6 @@ function renderizarCapa() {
       };
 
       posicoesTextosCapa.set(chave, novaPosicao);
-
       elemento.style.transform = `translate(${novaPosicao.x}px, ${novaPosicao.y}px)`;
     });
 
@@ -497,55 +419,6 @@ function renderizarCapa() {
   let imagem = null;
 
   if (fotoEscolhida) {
-    // Área reservada para a foto em cada arte.
-    // Valores em porcentagem relativos à capa.
-    const molduras = {
-      classico: {
-        top: 47,
-        left: 16,
-        width: 68,
-        height: 31,
-        radius: "0",
-      },
-      minimalista: {
-        top: 30,
-        left: 12,
-        width: 76,
-        height: 23,
-        radius: "0",
-      },
-      florido: {
-        top: 27,
-        left: 17,
-        width: 66,
-        height: 32,
-        radius: "0",
-      },
-      moderno: {
-        top: 22,
-        left: 17,
-        width: 66,
-        height: 53,
-        radius: "0",
-      },
-      fotografico: {
-        top: 9,
-        left: 10,
-        width: 80,
-        height: 43,
-        radius: "0",
-      },
-      contemporaneo: {
-        top: 35,
-        left: 15,
-        width: 70,
-        height: 30,
-        radius: "100px 100px 0 0",
-      },
-    };
-
-    const moldura = molduras[modelo] || molduras.classico;
-
     janela = document.createElement("div");
     janela.className = "janela-foto";
 
@@ -560,7 +433,7 @@ function renderizarCapa() {
       zIndex: "1",
       pointerEvents: "auto",
     });
-    // Camada independente que pode ser movida.
+
     camada = document.createElement("div");
     camada.className = "camada-foto";
 
@@ -579,6 +452,7 @@ function renderizarCapa() {
         zoom: 1,
         rotacao: 0,
       };
+
       chaveAjusteFoto = chaveAtual;
     }
 
@@ -591,10 +465,10 @@ function renderizarCapa() {
         `translate(${ajusteFotoCapa.x}px, ${ajusteFotoCapa.y}px) ` +
         `rotate(${ajusteFotoCapa.rotacao}deg) ` +
         `scale(${ajusteFotoCapa.zoom})`;
+
       ajustesFotosCapa.set(chaveAtual, { ...ajusteFotoCapa });
     }
 
-    // Gestos com mouse, toque, pinça e rotação.
     const ponteiros = new Map();
 
     let arrastando = false;
@@ -637,7 +511,6 @@ function renderizarCapa() {
 
       if (ponteiros.size === 2) {
         const [a, b] = [...ponteiros.values()];
-
         distanciaInicial = distancia(a, b);
         anguloInicial = angulo(a, b);
         zoomInicial = ajusteFotoCapa.zoom;
@@ -658,7 +531,6 @@ function renderizarCapa() {
 
       if (ponteiros.size === 1 && arrastando) {
         ajusteFotoCapa.x = posicaoX + evento.clientX - inicioX;
-
         ajusteFotoCapa.y = posicaoY + evento.clientY - inicioY;
       } else if (ponteiros.size === 2) {
         const [a, b] = [...ponteiros.values()];
@@ -704,13 +576,15 @@ function renderizarCapa() {
         evento.preventDefault();
 
         ajusteFotoCapa.zoom += evento.deltaY < 0 ? 0.08 : -0.08;
-
         ajusteFotoCapa.zoom = Math.max(0.05, Math.min(4, ajusteFotoCapa.zoom));
 
         aplicarAjuste();
       },
       { passive: false },
     );
+
+    // Guardado para uso após a inserção no DOM
+    janela._aplicarAjuste = aplicarAjuste;
   }
 
   const data = document.createElement("div");
@@ -726,7 +600,6 @@ function renderizarCapa() {
 
   previaCapa.appendChild(capa);
 
-  // Configura dimensões da camada após criar a moldura.
   if (camada && imagem) {
     Object.assign(camada.style, {
       position: "absolute",
@@ -750,12 +623,397 @@ function renderizarCapa() {
       boxShadow: "none",
     });
 
+    const aplicar = janela._aplicarAjuste;
+
     if (imagem.complete && imagem.naturalWidth) {
-      aplicarAjuste();
+      aplicar();
     } else {
-      imagem.addEventListener("load", aplicarAjuste, { once: true });
+      imagem.addEventListener("load", aplicar, { once: true });
     }
   }
+}
+
+/* =========================================================
+   INTEGRAÇÃO DO MURAL DE RECADOS COM O ÁLBUM
+========================================================= */
+
+const POSICOES_POSTITS_ALBUM = [
+  { left: "24%", top: "33%", width: "16%", height: "20%", rotation: "-5deg" },
+  { left: "41%", top: "32%", width: "14%", height: "19%", rotation: "-5deg" },
+  { left: "58%", top: "32%", width: "15%", height: "19%", rotation: "3deg" },
+  { left: "75%", top: "32%", width: "14%", height: "20%", rotation: "5deg" },
+  { left: "17%", top: "55%", width: "15%", height: "20%", rotation: "5deg" },
+  { left: "32%", top: "55%", width: "14%", height: "20%", rotation: "-4deg" },
+  { left: "49%", top: "55%", width: "15%", height: "20%", rotation: "1deg" },
+  { left: "65%", top: "55%", width: "14%", height: "20%", rotation: "-5deg" },
+  { left: "81%", top: "55%", width: "15%", height: "20%", rotation: "3deg" },
+  { left: "14%", top: "77%", width: "14%", height: "20%", rotation: "-6deg" },
+  { left: "28%", top: "77%", width: "14%", height: "20%", rotation: "-2deg" },
+  { left: "42%", top: "77%", width: "14%", height: "20%", rotation: "5deg" },
+  { left: "57%", top: "77%", width: "14%", height: "20%", rotation: "-1deg" },
+  { left: "72%", top: "77%", width: "14%", height: "20%", rotation: "2deg" },
+  { left: "88%", top: "77%", width: "14%", height: "20%", rotation: "5deg" },
+];
+
+async function carregarMensagensMuralAlbum() {
+  if (statusMuralAlbum) {
+    statusMuralAlbum.textContent =
+      "Carregando mensagens publicadas do evento...";
+  }
+
+  if (!EVENTO_ID) {
+    if (statusMuralAlbum) {
+      statusMuralAlbum.textContent =
+        "Abra o Editor de Álbum pelo Dashboard para identificar o evento e carregar seu mural.";
+    }
+
+    if (botaoAdicionarMural) {
+      botaoAdicionarMural.disabled = true;
+    }
+
+    muralAlbumCarregado = false;
+    return;
+  }
+
+  try {
+    const [{ data, error }, { data: eventoData }] = await Promise.all([
+      supabaseClient
+        .from("mural_mensagens")
+        .select("id, evento_id, nome, mensagem, status, created_at")
+        .eq("evento_id", EVENTO_ID)
+        .eq("status", "aprovada")
+        .order("created_at", { ascending: true }),
+
+      supabaseClient
+        .from("eventos")
+        .select("nome")
+        .eq("id", EVENTO_ID)
+        .maybeSingle(),
+    ]);
+
+    if (error) throw error;
+
+    mensagensMuralAlbum = data || [];
+    nomeEventoMuralAlbum = eventoData?.nome || "Memora";
+    muralAlbumCarregado = true;
+
+    console.info("Memora mural → mensagens recebidas:", mensagensMuralAlbum.length);
+
+    mensagemFinal.textContent = `Mural: ${mensagensMuralAlbum.length} mensagem(ns) aprovada(s) carregada(s) do Supabase.`;
+
+    if (statusMuralAlbum) {
+      statusMuralAlbum.textContent = mensagensMuralAlbum.length
+        ? `${mensagensMuralAlbum.length} mensagem(ns) publicada(s) disponível(is) para incluir no álbum.`
+        : "Este evento ainda não tem mensagens publicadas para inserir no álbum.";
+    }
+
+    if (botaoAdicionarMural) {
+      botaoAdicionarMural.disabled =
+        mensagensMuralAlbum.length === 0 || previaAlbum.hidden;
+    }
+
+    renderizarCapa();
+
+    if (!previaAlbum.hidden && typeof montarPreviaAlbum === "function") {
+      montarPreviaAlbum();
+    }
+  } catch (erro) {
+    console.error("Erro ao carregar mural para o álbum:", erro);
+
+    muralAlbumCarregado = false;
+
+    mensagemFinal.textContent = `Erro ao carregar o mural: ${erro.message || erro}`;
+
+    if (statusMuralAlbum) {
+      statusMuralAlbum.textContent =
+        "Não foi possível carregar as mensagens publicadas. Confira o evento e as permissões do Supabase.";
+    }
+
+    if (botaoAdicionarMural) {
+      botaoAdicionarMural.disabled = true;
+    }
+  }
+}
+
+function criarPaginaMuralAlbum(mensagensDaPagina, numeroMural) {
+  const paginaMural = document.createElement("section");
+  paginaMural.className = "album-pagina pagina-mural-album";
+  paginaMural.dataset.tipoPagina = "mural";
+  paginaMural.dataset.numeroMural = String(numeroMural);
+
+  const logo = document.createElement("img");
+  logo.className = "mural-album-logo";
+  logo.src = "img/memora.png";
+  logo.alt = "Memora";
+
+  const cabecalho = document.createElement("div");
+  cabecalho.className = "mural-album-cabecalho";
+  cabecalho.appendChild(document.createTextNode("Mural de Recados"));
+
+  const subtitulo = document.createElement("span");
+  subtitulo.className = "mural-album-evento";
+  subtitulo.textContent = nomeEventoMuralAlbum;
+  cabecalho.appendChild(subtitulo);
+
+  const camadaPostits = document.createElement("div");
+  camadaPostits.className = "camada-postits-album";
+
+  mensagensDaPagina.forEach((mensagem, indice) => {
+    const posicao = POSICOES_POSTITS_ALBUM[indice];
+    if (!posicao) return;
+
+    const postit = document.createElement("div");
+    postit.className = "postit-album-item";
+    postit.style.setProperty("--left", posicao.left);
+    postit.style.setProperty("--top", posicao.top);
+    postit.style.setProperty("--width", posicao.width);
+    postit.style.setProperty("--height", posicao.height);
+    postit.style.setProperty("--rotation", posicao.rotation);
+
+    const texto = document.createElement("span");
+    texto.className = "postit-album-texto";
+    texto.textContent = mensagem.mensagem || "";
+    texto.title = mensagem.mensagem || "";
+
+    const nome = document.createElement("span");
+    nome.className = "postit-album-nome";
+    nome.textContent = `— ${mensagem.nome || "Convidado"}`;
+
+    postit.append(texto, nome);
+    camadaPostits.appendChild(postit);
+  });
+
+  paginaMural.append(logo, cabecalho, camadaPostits);
+  return paginaMural;
+}
+
+function adicionarPaginasMuralNaPrevia() {
+  if (!mensagensMuralAlbum.length) return;
+
+  let numeroMural = 1;
+
+  for (let inicio = 0; inicio < mensagensMuralAlbum.length; inicio += 15) {
+    const mensagensDaPagina = mensagensMuralAlbum.slice(inicio, inicio + 15);
+
+    previaAlbum.appendChild(
+      criarPaginaMuralAlbum(mensagensDaPagina, numeroMural),
+    );
+
+    numeroMural++;
+  }
+}
+
+function atualizarControlePosicaoMural(totalPaginasFotos) {
+  if (!seletorPosicaoMural) return;
+
+  posicaoMuralAposPaginaFoto = Math.max(
+    0,
+    Math.min(posicaoMuralAposPaginaFoto, totalPaginasFotos),
+  );
+
+  const valorAnterior = String(posicaoMuralAposPaginaFoto);
+  seletorPosicaoMural.replaceChildren();
+
+  for (let posicao = 0; posicao <= totalPaginasFotos; posicao++) {
+    const opcao = document.createElement("option");
+
+    opcao.value = String(posicao);
+    opcao.textContent =
+      posicao === 0
+        ? "Logo após a capa"
+        : `Após a página de fotografias ${posicao}`;
+
+    seletorPosicaoMural.appendChild(opcao);
+  }
+
+  seletorPosicaoMural.value = valorAnterior;
+  seletorPosicaoMural.disabled =
+    !muralAlbumCarregado || mensagensMuralAlbum.length === 0;
+
+  if (botaoAdicionarMural) {
+    botaoAdicionarMural.hidden = muralAdicionadoAoAlbum;
+    botaoAdicionarMural.disabled =
+      !muralAlbumCarregado || mensagensMuralAlbum.length === 0;
+  }
+
+  if (botaoRemoverMural) {
+    botaoRemoverMural.hidden = !muralAdicionadoAoAlbum;
+  }
+}
+
+function calcularTotalPaginasFotos(fotosInternas, estilos) {
+  let indice = 0;
+  let numero = 1;
+
+  while (indice < fotosInternas.length) {
+    const chave = `pagina-${numero}`;
+    const layout = layoutsPaginas.get(chave) || layoutPadraoAlbum;
+    const estilo = estilos[layout] || estilos.elegante;
+
+    indice += Math.max(1, estilo.quantidade);
+    numero++;
+  }
+
+  return numero - 1;
+}
+
+/* =========================================================
+   SELEÇÃO DE ELEMENTOS (listener único)
+========================================================= */
+
+// Clicar fora de qualquer elemento ou controle limpa a seleção.
+// Registrado uma única vez, e não a cada renderização da prévia.
+previaAlbum.addEventListener("pointerdown", (evento) => {
+  if (
+    evento.target.closest(
+      ".item-memoria, .bloco-controles-pagina, .formatacao-memoria, .ferramentas-memoria, .seletor-layout-pagina",
+    )
+  ) {
+    return;
+  }
+
+  previaAlbum
+    .querySelectorAll(".item-memoria.selecionado")
+    .forEach((elemento) => elemento.classList.remove("selecionado"));
+});
+
+/* =========================================================
+   MONTAGEM DA PRÉ-VISUALIZAÇÃO DO ÁLBUM
+========================================================= */
+
+/* Mantém a ordem das fotos do álbum, sincronizada com as fotos marcadas. */
+function obterFotosAlbumOrdenadas() {
+  if (!fotos.length) return [];
+
+  ordemAlbum = ordemAlbum.filter(
+    (nome) => selecionadas.has(nome) && fotos.some((f) => f.name === nome),
+  );
+
+  fotos.forEach((foto) => {
+    if (selecionadas.has(foto.name) && !ordemAlbum.includes(foto.name)) {
+      ordemAlbum.push(foto.name);
+    }
+  });
+
+  return ordemAlbum.map((nome) => fotos.find((f) => f.name === nome));
+}
+
+/* Janela para escolher uma foto do evento. */
+function abrirSeletorFotoEvento({ titulo, nomeAtual, aoEscolher }) {
+  const modal = document.createElement("div");
+  modal.className = "modal-fotos-capa";
+
+  const painel = document.createElement("section");
+  painel.className = "painel-fotos-capa";
+  painel.setAttribute("role", "dialog");
+  painel.setAttribute("aria-modal", "true");
+  painel.setAttribute("aria-label", titulo);
+
+  const cabecalho = document.createElement("div");
+  cabecalho.className = "cabecalho-fotos-capa";
+
+  const tituloEl = document.createElement("h3");
+  tituloEl.textContent = titulo;
+
+  const fechar = document.createElement("button");
+  fechar.type = "button";
+  fechar.className = "botao botao-secundario";
+  fechar.textContent = "Fechar";
+  fechar.addEventListener("click", () => modal.remove());
+
+  cabecalho.append(tituloEl, fechar);
+
+  const grade = document.createElement("div");
+  grade.className = "grade-fotos-capa";
+
+  fotos.forEach((foto) => {
+    const ehAtual = foto.name === nomeAtual;
+    const naCapa = usarFotoNaCapa && foto.name === fotoCapa;
+    const noAlbum = selecionadas.has(foto.name);
+
+    const opcao = document.createElement("button");
+    opcao.type = "button";
+    opcao.className = "opcao-foto-capa";
+    opcao.disabled = ehAtual || naCapa;
+    opcao.style.opacity = ehAtual || naCapa ? "0.45" : "1";
+    opcao.style.cursor = ehAtual || naCapa ? "not-allowed" : "pointer";
+
+    const imagem = document.createElement("img");
+    imagem.src = obterUrl(foto);
+    imagem.alt = foto.name;
+    imagem.loading = "lazy";
+
+    const rotulo = document.createElement("span");
+    rotulo.textContent = ehAtual
+      ? "Foto atual"
+      : naCapa
+        ? "Está na capa"
+        : noAlbum
+          ? "Já no álbum (troca de lugar)"
+          : "";
+    Object.assign(rotulo.style, {
+      display: "block",
+      marginTop: "4px",
+      font: "11px Arial, sans-serif",
+      color: "#705b4d",
+      minHeight: "14px",
+    });
+
+    opcao.append(imagem, rotulo);
+
+    opcao.addEventListener("click", () => {
+      modal.remove();
+      aoEscolher(foto);
+    });
+
+    grade.appendChild(opcao);
+  });
+
+  painel.append(cabecalho, grade);
+  modal.appendChild(painel);
+
+  modal.addEventListener("click", (evento) => {
+    if (evento.target === modal) modal.remove();
+  });
+
+  document.body.appendChild(modal);
+}
+
+/* Troca uma foto do álbum por outra, mantendo o quadro e a posição. */
+function trocarFotoNoAlbum(nomeAtual, nomeNovo) {
+  if (!nomeNovo || nomeAtual === nomeNovo) return;
+
+  obterFotosAlbumOrdenadas();
+
+  const i = ordemAlbum.indexOf(nomeAtual);
+  if (i === -1) return;
+
+  const j = ordemAlbum.indexOf(nomeNovo);
+
+  const posAtual = posicoesFotosPagina.get(nomeAtual);
+  const posNova = posicoesFotosPagina.get(nomeNovo);
+
+  if (j !== -1) {
+    // A foto escolhida já está no álbum: as duas trocam de lugar
+    ordemAlbum[i] = nomeNovo;
+    ordemAlbum[j] = nomeAtual;
+
+    posicoesFotosPagina.delete(nomeAtual);
+    posicoesFotosPagina.delete(nomeNovo);
+    if (posNova) posicoesFotosPagina.set(nomeAtual, posNova);
+    if (posAtual) posicoesFotosPagina.set(nomeNovo, posAtual);
+  } else {
+    ordemAlbum[i] = nomeNovo;
+
+    selecionadas.delete(nomeAtual);
+    selecionadas.add(nomeNovo);
+
+    posicoesFotosPagina.delete(nomeAtual);
+    if (posAtual) posicoesFotosPagina.set(nomeNovo, posAtual);
+  }
+
+  renderizarPagina();
+  montarPreviaAlbum();
 }
 
 function montarPreviaAlbum() {
@@ -764,6 +1022,7 @@ function montarPreviaAlbum() {
   if (selecionadas.size === 0) {
     mensagemFinal.textContent =
       "Selecione pelo menos uma fotografia para visualizar o álbum.";
+
     previaAlbum.hidden = true;
     return;
   }
@@ -778,9 +1037,13 @@ function montarPreviaAlbum() {
 
   if (capaNaPrevia) {
     previaAlbum.appendChild(capaNaPrevia.cloneNode(true));
+
+    if (muralAdicionadoAoAlbum && posicaoMuralAposPaginaFoto === 0) {
+      adicionarPaginasMuralNaPrevia();
+    }
   }
 
-  const fotosSelecionadas = fotos.filter((foto) => selecionadas.has(foto.name));
+  const fotosSelecionadas = obterFotosAlbumOrdenadas();
 
   const fotosInternas = fotosSelecionadas.filter(
     (foto) => !usarFotoNaCapa || foto.name !== fotoCapa,
@@ -804,6 +1067,16 @@ function montarPreviaAlbum() {
     afetivo: { nome: "Afetivo", quantidade: 2 },
   };
 
+  const totalPaginasFotoPrevistas = calcularTotalPaginasFotos(
+    fotosInternas,
+    estilos,
+  );
+
+  posicaoMuralAposPaginaFoto = Math.min(
+    posicaoMuralAposPaginaFoto,
+    totalPaginasFotoPrevistas,
+  );
+
   let indiceFoto = 0;
   let numeroPagina = 1;
 
@@ -816,6 +1089,7 @@ function montarPreviaAlbum() {
 
     const layout = layoutsPaginas.get(chavePagina);
     const estilo = estilos[layout] || estilos.elegante;
+
     const fotosDestaPagina = fotosInternas.slice(
       indiceFoto,
       indiceFoto + estilo.quantidade,
@@ -823,8 +1097,27 @@ function montarPreviaAlbum() {
 
     const pagina = document.createElement("section");
     pagina.className = `album-pagina layout-${layout}`;
-
     pagina.style.position = "relative";
+    pagina.style.containerType = "inline-size";
+
+    const seletorTipoPagina = document.createElement("select");
+    seletorTipoPagina.className = "seletor-tipo-pagina";
+    seletorTipoPagina.setAttribute(
+      "aria-label",
+      `Tipo da página ${numeroPagina}`,
+    );
+
+    [
+      ["fotografias", "Fotografias"],
+      ["mural", "Mural de Recados"],
+    ].forEach(([valor, nome]) => {
+      const opcao = document.createElement("option");
+      opcao.value = valor;
+      opcao.textContent = nome;
+      seletorTipoPagina.appendChild(opcao);
+    });
+
+    seletorTipoPagina.value = tiposPaginas.get(chavePagina) || "fotografias";
 
     const seletorPagina = document.createElement("select");
     seletorPagina.className = "seletor-layout-pagina";
@@ -842,10 +1135,59 @@ function montarPreviaAlbum() {
 
     seletorPagina.value = layout;
 
+    seletorTipoPagina.addEventListener("change", () => {
+      tiposPaginas.set(chavePagina, seletorTipoPagina.value);
+      montarPreviaAlbum();
+    });
+
     seletorPagina.addEventListener("change", () => {
       layoutsPaginas.set(chavePagina, seletorPagina.value);
       montarPreviaAlbum();
     });
+
+    if (seletorTipoPagina.value === "mural") {
+      pagina.className = "album-pagina pagina-mural-album";
+
+      // Os seletores ficam FORA da página, para não alterar suas dimensões
+      const controlesMural = document.createElement("div");
+      controlesMural.className =
+        "bloco-controles-pagina controles-pagina-album";
+      controlesMural.append(seletorTipoPagina, seletorPagina);
+      previaAlbum.appendChild(controlesMural);
+
+      const numeroMural =
+        [...tiposPaginas.entries()].filter(
+          ([chave, tipo]) =>
+            tipo === "mural" &&
+            Number(chave.replace("pagina-", "")) < numeroPagina,
+        ).length + 1;
+
+      const inicioMensagens = (numeroMural - 1) * 15;
+      const mensagensDaPagina = mensagensMuralAlbum.slice(
+        inicioMensagens,
+        inicioMensagens + 15,
+      );
+
+      if (mensagensDaPagina.length) {
+        const muralVisual = criarPaginaMuralAlbum(
+          mensagensDaPagina,
+          numeroMural,
+        );
+
+        while (muralVisual.firstChild) {
+          pagina.appendChild(muralVisual.firstChild);
+        }
+      } else {
+        const aviso = document.createElement("p");
+        aviso.textContent =
+          "Não há mensagens aprovadas disponíveis para esta página.";
+        pagina.appendChild(aviso);
+      }
+
+      previaAlbum.appendChild(pagina);
+      numeroPagina++;
+      continue;
+    }
 
     const tituloPagina = document.createElement("h3");
     const tituloAlbum = document.getElementById("titulo").value.trim();
@@ -860,9 +1202,10 @@ function montarPreviaAlbum() {
     const estiloMemoriasId = "memora-estilos-memorias";
 
     if (!document.getElementById(estiloMemoriasId)) {
-      const estilo = document.createElement("style");
-      estilo.id = estiloMemoriasId;
-      estilo.textContent = `
+      const estiloMemorias = document.createElement("style");
+      estiloMemorias.id = estiloMemoriasId;
+
+      estiloMemorias.textContent = `
     .ferramentas-memoria {
       display: flex;
       flex-wrap: wrap;
@@ -926,6 +1269,21 @@ function montarPreviaAlbum() {
     .item-memoria.selecionado {
       outline: 1px dashed #b9853e;
       outline-offset: 3px;
+    }
+
+    .item-memoria .botao-excluir-memoria {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.15s ease;
+    }
+
+    .item-memoria.selecionado .botao-excluir-memoria,
+    .item-memoria:hover .botao-excluir-memoria,
+    .item-memoria:focus-within .botao-excluir-memoria {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
     }
 
     .item-memoria .conteudo-memoria {
@@ -1042,7 +1400,8 @@ function montarPreviaAlbum() {
       margin-top: 18px;
     }
   `;
-      document.head.appendChild(estilo);
+
+      document.head.appendChild(estiloMemorias);
     }
 
     const ferramentas = document.createElement("div");
@@ -1081,8 +1440,10 @@ function montarPreviaAlbum() {
       ["Verdana", "Verdana"],
     ].forEach(([valor, nome]) => {
       const opcao = document.createElement("option");
+
       opcao.value = valor;
       opcao.textContent = nome;
+
       fonte.appendChild(opcao);
     });
 
@@ -1110,8 +1471,10 @@ function montarPreviaAlbum() {
       ["justify", "Justificado"],
     ].forEach(([valor, nome]) => {
       const opcao = document.createElement("option");
+
       opcao.value = valor;
       opcao.textContent = nome;
+
       alinhamento.appendChild(opcao);
     });
 
@@ -1146,7 +1509,7 @@ function montarPreviaAlbum() {
     let itemSelecionado = null;
 
     function selecionarElemento(item, memoria) {
-      camadaMemorias
+      previaAlbum
         .querySelectorAll(".item-memoria.selecionado")
         .forEach((elemento) => {
           elemento.classList.remove("selecionado");
@@ -1164,7 +1527,12 @@ function montarPreviaAlbum() {
     }
 
     function atualizarElementoSelecionado() {
-      if (!itemSelecionado) return;
+      if (
+        !itemSelecionado ||
+        !itemSelecionado.classList.contains("selecionado")
+      ) {
+        return;
+      }
 
       const memoria = memorias.find(
         (item) => item.id === itemSelecionado.dataset.id,
@@ -1174,18 +1542,22 @@ function montarPreviaAlbum() {
 
       memoria.fonte = fonte.value;
       memoria.tamanhoFonte = Number(tamanhoFonte.value) || 16;
-      memoria.corFonte = corFonte.value;
+      memoria.corFonte = corFonte.value || "#57351f";
       memoria.alinhamento = alinhamento.value;
       memoria.escala = Number(tamanhoElemento.value) || 100;
       memoria.rotacao = Number(rotacaoElemento.value) || 0;
+
+      if (memoria.tipo === "fita-memoria") {
+        memoria.escala = Math.max(40, Math.min(300, memoria.escala));
+      }
 
       const conteudo = itemSelecionado.querySelector(".conteudo-memoria");
 
       if (conteudo) {
         conteudo.style.fontFamily = memoria.fonte;
-        conteudo.style.fontSize = `${memoria.tamanhoFonte}px`;
         conteudo.style.color = memoria.corFonte;
         conteudo.style.textAlign = memoria.alinhamento;
+        conteudo.style.fontSize = `${memoria.tipo === "emoji-memoria" ? Math.max(16, memoria.escala * 0.36) : memoria.tamanhoFonte}px`;
       }
 
       const escalaVisual =
@@ -1216,8 +1588,8 @@ function montarPreviaAlbum() {
       const texto = document.createElement("p");
       texto.textContent = descricao;
 
-      const grade = document.createElement("div");
-      grade.className = "opcoes-memoria";
+      const gradeOpcoes = document.createElement("div");
+      gradeOpcoes.className = "opcoes-memoria";
 
       opcoes.forEach((opcao) => {
         const botao = document.createElement("button");
@@ -1226,14 +1598,16 @@ function montarPreviaAlbum() {
         botao.title = opcao.nome;
         botao.className = opcao.classeBotao || "";
 
-        if (opcao.fundo) botao.style.background = opcao.fundo;
+        if (opcao.fundo) {
+          botao.style.background = opcao.fundo;
+        }
 
         botao.addEventListener("click", () => {
           fundo.remove();
           aoEscolher(opcao);
         });
 
-        grade.appendChild(botao);
+        gradeOpcoes.appendChild(botao);
       });
 
       const acoes = document.createElement("div");
@@ -1245,7 +1619,7 @@ function montarPreviaAlbum() {
       cancelar.addEventListener("click", () => fundo.remove());
 
       acoes.appendChild(cancelar);
-      painel.append(cabecalho, texto, grade, acoes);
+      painel.append(cabecalho, texto, gradeOpcoes, acoes);
       fundo.appendChild(painel);
 
       fundo.addEventListener("click", (evento) => {
@@ -1270,7 +1644,6 @@ function montarPreviaAlbum() {
 
       const ehEmoji = memoria.tipo === "emoji-memoria";
       const ehFita = memoria.tipo === "fita-memoria";
-      const ehTextoEditavel = !ehEmoji && !ehFita;
 
       const conteudo = document.createElement("div");
       conteudo.className = "conteudo-memoria";
@@ -1278,49 +1651,54 @@ function montarPreviaAlbum() {
       if (ehEmoji || ehFita) {
         conteudo.textContent = memoria.conteudo;
       } else {
-        conteudo.contentEditable = "true";
+        try {
+          // Texto simples: o Enter vira quebra de linha de verdade
+          conteudo.contentEditable = "plaintext-only";
+        } catch (_) {
+          conteudo.contentEditable = "true";
+        }
         conteudo.textContent = memoria.conteudo;
         conteudo.setAttribute("role", "textbox");
         conteudo.setAttribute("aria-label", "Editar texto da memória");
         conteudo.setAttribute("spellcheck", "true");
 
         conteudo.addEventListener("input", () => {
-          memoria.conteudo = conteudo.textContent;
+          memoria.conteudo = conteudo.innerText.replace(/\n+$/, "");
         });
       }
 
       item.appendChild(conteudo);
 
-      // Botão para excluir o elemento selecionado.
-      const botaoExcluir = document.createElement("button");
-      botaoExcluir.type = "button";
-      botaoExcluir.className = "excluir-elemento-memoria";
-      botaoExcluir.textContent = "×";
-      botaoExcluir.title = "Excluir elemento";
-      botaoExcluir.setAttribute("aria-label", "Excluir elemento");
+      const botaoExcluirElemento = document.createElement("button");
 
-      Object.assign(botaoExcluir.style, {
+      botaoExcluirElemento.type = "button";
+      botaoExcluirElemento.className = "botao-excluir-memoria";
+      botaoExcluirElemento.textContent = "×";
+      botaoExcluirElemento.title = "Excluir este elemento";
+      botaoExcluirElemento.setAttribute("aria-label", "Excluir este elemento");
+
+      Object.assign(botaoExcluirElemento.style, {
         position: "absolute",
-        top: "-12px",
-        right: "-12px",
-        width: "26px",
-        height: "26px",
+        top: "2px",
+        right: "2px",
+        width: "24px",
+        height: "24px",
+        padding: "0",
+        border: "1px solid #a33",
         borderRadius: "50%",
-        border: "1px solid #b9853e",
-        background: "#fffaf2",
-        color: "#8b2e2e",
-        fontSize: "20px",
-        lineHeight: "20px",
+        background: "#fff",
+        color: "#a33",
+        font: "bold 18px Arial, sans-serif",
         cursor: "pointer",
-        zIndex: "20",
-        display: "none",
+        zIndex: "9999",
+        pointerEvents: "auto",
       });
 
-      botaoExcluir.addEventListener("pointerdown", (evento) => {
+      botaoExcluirElemento.addEventListener("pointerdown", (evento) => {
         evento.stopPropagation();
       });
 
-      botaoExcluir.addEventListener("click", (evento) => {
+      botaoExcluirElemento.addEventListener("click", (evento) => {
         evento.preventDefault();
         evento.stopPropagation();
 
@@ -1328,25 +1706,30 @@ function montarPreviaAlbum() {
           (elemento) => elemento.id === memoria.id,
         );
 
-        if (indice !== -1) memorias.splice(indice, 1);
+        if (indice !== -1) {
+          memorias.splice(indice, 1);
+        }
 
-        item.remove();
-
-        if (
-          typeof itemSelecionado !== "undefined" &&
-          itemSelecionado === item
-        ) {
+        if (itemSelecionado === item) {
           itemSelecionado = null;
         }
+
+        item.remove();
       });
 
-      item.appendChild(botaoExcluir);
+      item.appendChild(botaoExcluirElemento);
 
       function aplicarFormato() {
         conteudo.style.fontFamily = memoria.fonte || "Georgia";
-        conteudo.style.fontSize = `${memoria.tamanhoFonte || (ehEmoji ? 36 : 16)}px`;
+        conteudo.style.fontSize = `${memoria.tamanhoFonte || 16}px`;
         conteudo.style.color = memoria.corFonte || "#57351f";
         conteudo.style.textAlign = memoria.alinhamento || "left";
+
+        const escala = (memoria.escala || 100) / 100;
+        const rotacao = memoria.rotacao || 0;
+
+        item.style.transform = `rotate(${rotacao}deg) scale(${escala})`;
+        item.style.transformOrigin = "top left";
 
         if (ehEmoji) {
           conteudo.style.fontSize = `${memoria.tamanhoFonte || 36}px`;
@@ -1356,42 +1739,19 @@ function montarPreviaAlbum() {
           item.style.background = memoria.corFita || "#f4d6a5cc";
           item.style.width = `${memoria.escala || 100}px`;
           item.style.height = "26px";
-        } else {
-          item.style.transform = `rotate(${memoria.rotacao || 0}deg) scale(${(memoria.escala || 100) / 100})`;
-          item.style.transformOrigin = "top left";
         }
       }
 
       aplicarFormato();
 
       item.addEventListener("click", () => {
-        item.addEventListener("pointerleave", () => {
-          botaoExcluir.style.display = "none";
-        });
-
-        item.addEventListener("focusout", (evento) => {
-          if (!item.contains(evento.relatedTarget)) {
-            botaoExcluir.style.display = "none";
-          }
-        });
-
         selecionarElemento(item, memoria);
-
-        document
-          .querySelectorAll(".excluir-elemento-memoria")
-          .forEach((botao) => {
-            botao.style.display = "none";
-          });
-
-        botaoExcluir.style.display = "block";
       });
 
       function iniciarMovimento(evento) {
         if (evento.button !== undefined && evento.button !== 0) return;
-        if (evento.target.closest("button")) return;
 
-        // Texto: só arrasta pela borda, nunca enquanto estiver sendo editado.
-        if (ehTextoEditavel && evento.target === conteudo) return;
+        if (!ehEmoji && !ehFita && evento.target === conteudo) return;
 
         evento.preventDefault();
         evento.stopPropagation();
@@ -1411,8 +1771,9 @@ function montarPreviaAlbum() {
           const dx = ((ev.clientX - inicioX) / largura) * 100;
           const dy = ((ev.clientY - inicioY) / altura) * 100;
 
-          item.style.left = `${Math.max(0, Math.min(95, esquerdaInicial + dx))}%`;
-          item.style.top = `${Math.max(0, Math.min(95, topoInicial + dy))}%`;
+          item.style.left = `${Math.max(0, Math.min(90, esquerdaInicial + dx))}%`;
+
+          item.style.top = `${Math.max(0, Math.min(90, topoInicial + dy))}%`;
 
           memoria.left = item.style.left;
           memoria.top = item.style.top;
@@ -1429,13 +1790,15 @@ function montarPreviaAlbum() {
         document.addEventListener("pointercancel", finalizar);
       }
 
-      item.addEventListener("pointerdown", (evento) => {
-        if (evento.target === item || ehEmoji || ehFita) {
-          iniciarMovimento(evento);
-        }
-      });
+      if (ehEmoji || ehFita) {
+        item.addEventListener("pointerdown", iniciarMovimento);
+      } else {
+        item.addEventListener("pointerdown", (evento) => {
+          if (evento.target === item) iniciarMovimento(evento);
+        });
+      }
 
-      if (ehTextoEditavel && window.ResizeObserver) {
+      if (!ehEmoji && !ehFita && window.ResizeObserver) {
         const observador = new ResizeObserver(() => {
           if (item.style.width) memoria.width = item.style.width;
           if (item.style.height) memoria.height = item.style.height;
@@ -1445,6 +1808,7 @@ function montarPreviaAlbum() {
       }
 
       camadaMemorias.appendChild(item);
+
       return item;
     }
 
@@ -1460,7 +1824,7 @@ function montarPreviaAlbum() {
         tamanhoFonte: tipo === "emoji-memoria" ? 36 : 16,
         corFonte: "#57351f",
         alinhamento: "left",
-        escala: tipo === "emoji-memoria" ? 100 : 100,
+        escala: 100,
         rotacao: 0,
         ...extras,
       };
@@ -1506,98 +1870,15 @@ function montarPreviaAlbum() {
     });
 
     const emojisDisponiveis = [
-      "❤️",
-      "💕",
-      "💖",
-      "💗",
-      "💘",
-      "💝",
-      "💞",
-      "💓",
-      "✨",
-      "🌟",
-      "⭐",
-      "🌸",
-      "🌹",
-      "🌷",
-      "🌻",
-      "🌼",
-      "🥂",
-      "💍",
-      "💐",
-      "🎂",
-      "🎉",
-      "🎊",
-      "🦋",
-      "🕊️",
-      "😊",
-      "🥰",
-      "😍",
-      "😘",
-      "🤗",
-      "😂",
-      "🥹",
-      "😎",
-      "👰",
-      "🤵",
-      "👩‍❤️‍👨",
-      "👨‍👩‍👧",
-      "👨‍👩‍👦",
-      "🏡",
-      "🌈",
-      "☀️",
-      "🌙",
-      "🌿",
-      "🍀",
-      "🌺",
-      "📸",
-      "🎵",
-      "🎶",
-      "💌",
-      "🎁",
-      "🧸",
-      "🙏",
-      "🤍",
-      "🫶",
-      "💫",
-      "🔥",
-      "👏",
-      "🥳",
-      "💃",
-      "🕺",
-      "🍾",
-      "🌅",
-      "📍",
-      "💌",
-      "🧡",
-      "💛",
-      "💚",
-      "💙",
-      "💜",
-      "🩷",
-      "🪻",
-      "🪷",
-      "🪻",
-      "🌱",
-      "🍁",
-      "🍂",
-      "🌴",
-      "🌊",
-      "🐚",
-      "🐾",
-      "🐶",
-      "🐱",
-      "🕯️",
-      "🎈",
-      "🎀",
-      "💎",
-      "👑",
-      "🧿",
-      "🪄",
-      "🪽",
-      "🫧",
-      "🪞",
-      "🧵",
+      "❤️", "💕", "💖", "💗", "💘", "💝", "💞", "💓", "✨", "🌟",
+      "⭐", "🌸", "🌹", "🌷", "🌻", "🌼", "🥂", "💍", "💐", "🎂",
+      "🎉", "🎊", "🦋", "🕊️", "😊", "🥰", "😍", "😘", "🤗", "😂",
+      "🥹", "😎", "👰", "🤵", "👩‍❤️‍👨", "👨‍👩‍👧", "👨‍👩‍👦", "🏡", "🌈", "☀️",
+      "🌙", "🌿", "🍀", "🌺", "📸", "🎵", "🎶", "💌", "🎁", "🧸",
+      "🙏", "🤍", "🫶", "💫", "🔥", "👏", "🥳", "💃", "🕺", "🍾",
+      "🌅", "📍", "🧡", "💛", "💚", "💙", "💜", "🩷", "🪻", "🪷",
+      "🌱", "🍁", "🍂", "🌴", "🌊", "🐚", "🐾", "🐶", "🐱", "🕯️",
+      "🎈", "🎀", "💎", "👑", "🧿", "🪄", "🪽", "🫧", "🪞", "🧵",
       "🪡",
     ];
 
@@ -1643,19 +1924,9 @@ function montarPreviaAlbum() {
       );
     });
 
-    const grupoCores = document.createElement("div");
-    grupoCores.className = "grupo-cores-memora";
-
-    const botaoCores = document.createElement("button");
-    botaoCores.type = "button";
-    botaoCores.className = "botao-abrir-cores";
-    botaoCores.textContent = "🎨 Cor do texto";
-    botaoCores.setAttribute("aria-expanded", "false");
-
     const paletaCores = document.createElement("div");
     paletaCores.className = "paleta-cores-memora";
     paletaCores.setAttribute("aria-label", "Cores do texto");
-    paletaCores.hidden = true;
 
     const coresDisponiveis = [
       "#57351f",
@@ -1691,25 +1962,15 @@ function montarPreviaAlbum() {
       amostra.addEventListener("click", () => {
         corFonte.value = cor;
         atualizarElementoSelecionado();
-        paletaCores.hidden = true;
-        botaoCores.setAttribute("aria-expanded", "false");
       });
 
       paletaCores.appendChild(amostra);
     });
 
-    botaoCores.addEventListener("click", () => {
-      const vaiAbrir = paletaCores.hidden;
-      paletaCores.hidden = !vaiAbrir;
-      botaoCores.setAttribute("aria-expanded", String(vaiAbrir));
-    });
-
-    grupoCores.append(botaoCores, paletaCores);
-
     formatacao.append(
       fonte,
       tamanhoFonte,
-      grupoCores,
+      paletaCores,
       alinhamento,
       document.createTextNode("Tamanho"),
       tamanhoElemento,
@@ -1752,6 +2013,7 @@ function montarPreviaAlbum() {
       imagem.draggable = false;
 
       const chaveFoto = `${foto.name}`;
+
       const ajusteSalvo = ajustesFotosInternas.get(chaveFoto) || {
         x: 0,
         y: 0,
@@ -1811,8 +2073,6 @@ function montarPreviaAlbum() {
 
       const controles = document.createElement("div");
       controles.className = "controles-zoom-foto";
-
-      // Evita que os cliques nos controles iniciem o arraste da imagem.
       controles.style.zIndex = "5";
 
       const diminuir = document.createElement("button");
@@ -1842,27 +2102,98 @@ function montarPreviaAlbum() {
       });
 
       indicador.textContent = `${Math.round(ajuste.zoom * 100)}%`;
-      controles.append(diminuir, indicador, aumentar);
+      const mover = document.createElement("button");
+      mover.type = "button";
+      mover.textContent = "✥";
+      mover.title = "Arraste para mover esta foto pela página";
+      mover.setAttribute("aria-label", "Mover foto pela página");
+      mover.style.touchAction = "none";
+      mover.style.cursor = "move";
 
+      const trocar = document.createElement("button");
+      trocar.type = "button";
+      trocar.textContent = "⇄";
+      trocar.title = "Trocar esta foto por outra do evento";
+      trocar.setAttribute("aria-label", "Trocar foto");
+
+      const posFoto = { ...(posicoesFotosPagina.get(foto.name) || { x: 0, y: 0 }) };
+
+      function aplicarPosicaoFoto() {
+        figura.style.translate = `${posFoto.x}cqw ${posFoto.y}cqw`;
+        figura.style.zIndex = posFoto.x || posFoto.y ? "3" : "";
+      }
+
+      aplicarPosicaoFoto();
+
+      mover.addEventListener("pointerdown", (evento) => {
+        evento.preventDefault();
+        evento.stopPropagation();
+
+        try {
+          mover.setPointerCapture(evento.pointerId);
+        } catch (_) {}
+
+        const larguraPagina =
+          figura.closest(".album-pagina")?.clientWidth || 720;
+        const ponteiroX0 = evento.clientX;
+        const ponteiroY0 = evento.clientY;
+        const baseX = posFoto.x;
+        const baseY = posFoto.y;
+
+        function arrastarFoto(ev) {
+          posFoto.x = baseX + ((ev.clientX - ponteiroX0) / larguraPagina) * 100;
+          posFoto.y = baseY + ((ev.clientY - ponteiroY0) / larguraPagina) * 100;
+
+          aplicarPosicaoFoto();
+          posicoesFotosPagina.set(foto.name, { ...posFoto });
+        }
+
+        function soltarFoto() {
+          mover.removeEventListener("pointermove", arrastarFoto);
+          mover.removeEventListener("pointerup", soltarFoto);
+          mover.removeEventListener("pointercancel", soltarFoto);
+        }
+
+        mover.addEventListener("pointermove", arrastarFoto);
+        mover.addEventListener("pointerup", soltarFoto);
+        mover.addEventListener("pointercancel", soltarFoto);
+      });
+
+      trocar.addEventListener("click", () => {
+        abrirSeletorFotoEvento({
+          titulo: "Trocar esta foto por outra",
+          nomeAtual: foto.name,
+          aoEscolher: (nova) => trocarFotoNoAlbum(foto.name, nova.name),
+        });
+      });
+
+      controles.append(diminuir, indicador, aumentar, mover, trocar);
       figura.appendChild(controles);
 
       const legenda = document.createElement("figcaption");
       legenda.textContent = "";
-
       figura.appendChild(legenda);
 
       aplicarAjusteFoto();
       grade.appendChild(figura);
     }
-    pagina.append(
-      seletorPagina,
-      tituloPagina,
-      ferramentas,
-      formatacao,
-      grade,
-      camadaMemorias,
-    );
-    previaAlbum.appendChild(pagina);
+
+    // Controles ficam FORA da página: a página contém só o que faz parte dela
+    const controlesPagina = document.createElement("div");
+    controlesPagina.className = "controles-pagina-album";
+    controlesPagina.append(seletorTipoPagina, seletorPagina);
+
+    const blocoControles = document.createElement("div");
+    blocoControles.className = "bloco-controles-pagina";
+    blocoControles.append(controlesPagina, ferramentas, formatacao);
+
+    pagina.append(tituloPagina, grade, camadaMemorias);
+
+    previaAlbum.append(blocoControles, pagina);
+
+    if (muralAdicionadoAoAlbum && posicaoMuralAposPaginaFoto === numeroPagina) {
+      adicionarPaginasMuralNaPrevia();
+    }
 
     indiceFoto += fotosDestaPagina.length;
     numeroPagina++;
@@ -1871,7 +2202,15 @@ function montarPreviaAlbum() {
   previaAlbum.hidden = false;
   botaoVoltar.hidden = false;
 
-  mensagemFinal.textContent = `Pré-visualização criada com ${selecionadas.size} fotografia(s).`;
+  atualizarControlePosicaoMural(numeroPagina - 1);
+
+  const paginasMural = muralAdicionadoAoAlbum
+    ? Math.ceil(mensagensMuralAlbum.length / 15)
+    : 0;
+
+  mensagemFinal.textContent = muralAdicionadoAoAlbum
+    ? `Pré-visualização criada com ${selecionadas.size} fotografia(s) e ${paginasMural} página(s) de mural.`
+    : `Pré-visualização criada com ${selecionadas.size} fotografia(s). Você pode inserir o mural usando os controles da etapa 04.`;
 }
 
 function atualizarPreviaExistente() {
@@ -1890,11 +2229,16 @@ botaoVisualizar.addEventListener("click", () => {
   }
 
   montarPreviaAlbum();
+
+  requestAnimationFrame(() => {
+    botaoFolhearAlbum?.click();
+  });
 });
 
 botaoVoltar.addEventListener("click", () => {
   previaAlbum.hidden = true;
   botaoVoltar.hidden = true;
+
   mensagemFinal.textContent =
     "Você voltou à edição. Suas seleções continuam preservadas.";
 
@@ -1902,17 +2246,6 @@ botaoVoltar.addEventListener("click", () => {
     behavior: "smooth",
     block: "start",
   });
-});
-
-botaoPdf.addEventListener("click", () => {
-  if (previaAlbum.hidden) {
-    mensagemFinal.textContent =
-      "Primeiro clique em Visualizar álbum para conferir a capa e as páginas.";
-    return;
-  }
-
-  mensagemFinal.textContent =
-    "A pré-visualização está pronta. A geração e o download do PDF ainda precisam ser implementados.";
 });
 
 ["titulo", "nomes", "dataEvento", "fraseCapa", "corTexto"].forEach((id) => {
@@ -1945,107 +2278,864 @@ document.getElementById("restaurarFoto")?.addEventListener("click", () => {
   renderizarCapa();
 });
 
+/* =========================================================
+   CONTROLES PARA INSERIR OU REMOVER O MURAL
+========================================================= */
 
-document
-  .getElementById("salvarRascunhoLateral")
-  ?.addEventListener("click", salvarRascunho);
+if (seletorPosicaoMural) {
+  seletorPosicaoMural.addEventListener("change", () => {
+    posicaoMuralAposPaginaFoto = Number(seletorPosicaoMural.value) || 0;
 
-document
-  .getElementById("voltarEdicaoLateral")
-  ?.addEventListener("click", () => {
-    botaoVoltar.click();
+    if (!previaAlbum.hidden) {
+      montarPreviaAlbum();
+    }
   });
+}
+
+if (botaoAdicionarMural) {
+  botaoAdicionarMural.addEventListener("click", () => {
+    if (!previaAlbum || previaAlbum.hidden) {
+      if (statusMuralAlbum) {
+        statusMuralAlbum.textContent =
+          "Clique em Visualizar álbum primeiro. Depois escolha onde inserir o mural.";
+      }
+      return;
+    }
+
+    if (!mensagensMuralAlbum.length) {
+      if (statusMuralAlbum) {
+        statusMuralAlbum.textContent =
+          "Não há mensagens publicadas disponíveis para inserir neste álbum.";
+      }
+      return;
+    }
+
+    posicaoMuralAposPaginaFoto = Number(seletorPosicaoMural?.value) || 0;
+
+    muralAdicionadoAoAlbum = true;
+    montarPreviaAlbum();
+
+    if (statusMuralAlbum) {
+      statusMuralAlbum.textContent =
+        "Mural inserido na sequência do álbum. Se houver mais de 15 mensagens, serão criadas páginas consecutivas adicionais.";
+    }
+  });
+}
+
+if (botaoRemoverMural) {
+  botaoRemoverMural.addEventListener("click", () => {
+    muralAdicionadoAoAlbum = false;
+    montarPreviaAlbum();
+
+    if (statusMuralAlbum) {
+      statusMuralAlbum.textContent =
+        "Mural removido da pré-visualização do álbum.";
+    }
+  });
+}
+
+const botaoEscolherFotoCapa = document.getElementById("escolherFotoCapa");
+
+const botaoRemoverFotoCapa = document.getElementById("removerFotoCapa");
+
+botaoEscolherFotoCapa?.addEventListener("click", () => {
+  const modal = document.createElement("div");
+  modal.className = "modal-fotos-capa";
+
+  const painel = document.createElement("section");
+  painel.className = "painel-fotos-capa";
+  painel.setAttribute("role", "dialog");
+  painel.setAttribute("aria-modal", "true");
+  painel.setAttribute("aria-label", "Escolher foto da capa");
+
+  const cabecalho = document.createElement("div");
+  cabecalho.className = "cabecalho-fotos-capa";
+
+  const titulo = document.createElement("h3");
+  titulo.textContent = "Escolher foto da capa";
+
+  const fechar = document.createElement("button");
+  fechar.type = "button";
+  fechar.className = "botao botao-secundario";
+  fechar.textContent = "Fechar";
+  fechar.addEventListener("click", () => modal.remove());
+
+  cabecalho.append(titulo, fechar);
+
+  const grade = document.createElement("div");
+  grade.className = "grade-fotos-capa";
+
+  fotos.forEach((foto) => {
+    const opcao = document.createElement("button");
+    opcao.type = "button";
+    opcao.className = "opcao-foto-capa";
+    opcao.setAttribute("aria-label", `Usar ${foto.name} na capa`);
+
+    const imagem = document.createElement("img");
+    imagem.src = obterUrl(foto);
+    imagem.alt = foto.name;
+    imagem.loading = "lazy";
+
+    opcao.appendChild(imagem);
+
+    opcao.addEventListener("click", () => {
+      fotoCapa = foto.name;
+      usarFotoNaCapa = true;
+      ajusteFotoCapa = { x: 0, y: 0, zoom: 1, rotacao: 0 };
+      chaveAjusteFoto = "";
+
+      modal.remove();
+      atualizarControlesFotos();
+      renderizarCapa();
+    });
+
+    grade.appendChild(opcao);
+  });
+
+  painel.append(cabecalho, grade);
+  modal.appendChild(painel);
+
+  modal.addEventListener("click", (evento) => {
+    if (evento.target === modal) modal.remove();
+  });
+
+  document.body.appendChild(modal);
+});
+
+botaoRemoverFotoCapa?.addEventListener("click", () => {
+  usarFotoNaCapa = false;
+  fotoCapa = null;
+  ajusteFotoCapa = { x: 0, y: 0, zoom: 1, rotacao: 0 };
+  chaveAjusteFoto = "";
+
+  atualizarControlesFotos();
+  renderizarCapa();
+});
+
+/* =========================================================
+   LEITOR INTERATIVO — FOLHEAR O ÁLBUM
+========================================================= */
+
+const botaoFolhearAlbum = document.getElementById("folhearAlbum");
+
+function habilitarFolhearAlbum() {
+  if (!previaAlbum.hidden && botaoFolhearAlbum) {
+    botaoFolhearAlbum.hidden = false;
+
+    botaoFolhearAlbum.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  } else {
+    console.warn(
+      "Memora: a pré-visualização ainda está oculta.",
+      previaAlbum.hidden,
+    );
+  }
+}
+
+document.getElementById("visualizarAlbum")?.addEventListener("click", () => {
+  setTimeout(habilitarFolhearAlbum, 0);
+});
 
 document
   .getElementById("visualizarAlbumLateral")
   ?.addEventListener("click", () => {
-    botaoVisualizar.click();
+    if (selecionadas.size === 0) {
+      mensagemFinal.textContent =
+        "Selecione pelo menos uma fotografia na galeria para editar as páginas.";
+
+      document.getElementById("selecao")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+      return;
+    }
+
+    // Monta a área de edição apenas se ela ainda não estiver aberta
+    if (previaAlbum.hidden) {
+      montarPreviaAlbum();
+    }
+
+    if (botaoFolhearAlbum) {
+      botaoFolhearAlbum.hidden = false;
+    }
+
+    requestAnimationFrame(() => {
+      previaAlbum.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
   });
 
-async function validarAcessoECarregarFotos() {
-  const { data: sessaoData, error: erroSessao } =
-    await supabaseClient.auth.getSession();
+botaoFolhearAlbum?.addEventListener("click", () => {
+  const paginas = [
+    ...document.querySelectorAll(
+      "#previaAlbum > .capa-preview, #previaAlbum > .album-pagina",
+    ),
+  ];
 
-  const sessao = sessaoData?.session;
-
-  if (erroSessao || !sessao) {
-    window.location.replace("conta.html");
+  if (paginas.length === 0) {
+    mensagemFinal.textContent =
+      "Primeiro visualize o álbum para poder folheá-lo.";
     return;
   }
 
+  let indice = 0;
+
+  const leitor = document.createElement("div");
+  leitor.className = "leitor-livro-memora";
+  leitor.setAttribute("role", "dialog");
+  leitor.setAttribute("aria-modal", "true");
+  leitor.setAttribute("aria-label", "Álbum digital");
+
+  const livro = document.createElement("div");
+  livro.className = "livro-memora";
+
+  const barra = document.createElement("div");
+  barra.className = "barra-leitor-memora";
+
+  const contador = document.createElement("span");
+  contador.className = "contador-leitor-memora";
+
+  const fechar = document.createElement("button");
+  fechar.type = "button";
+  fechar.className = "botao botao-secundario";
+  fechar.textContent = "Fechar livro";
+  fechar.addEventListener("click", () => leitor.remove());
+
+  barra.append(contador, fechar);
+
+  const paginasAbertas = document.createElement("div");
+  paginasAbertas.className = "paginas-abertas-memora";
+
+  const esquerda = document.createElement("div");
+  esquerda.className = "folha-memora folha-esquerda";
+
+  const direita = document.createElement("div");
+  direita.className = "folha-memora folha-direita";
+
+  paginasAbertas.append(esquerda, direita);
+
+  const navegacao = document.createElement("div");
+  navegacao.className = "navegacao-livro-memora";
+
+  const anterior = document.createElement("button");
+  anterior.type = "button";
+  anterior.className = "botao botao-secundario";
+  anterior.textContent = "← Anterior";
+
+  const proxima = document.createElement("button");
+  proxima.type = "button";
+  proxima.className = "botao";
+  proxima.textContent = "Próxima →";
+
+  navegacao.append(anterior, proxima);
+  livro.append(barra, paginasAbertas, navegacao);
+  leitor.appendChild(livro);
+
+  // A página é copiada no tamanho ORIGINAL da edição e depois reduzida
+  // com scale() para caber na folha. Assim nada muda de posição.
+  function clonarPaginaParaLeitor(paginaOriginal) {
+    const largura = paginaOriginal.offsetWidth;
+    const altura = paginaOriginal.offsetHeight;
+
+    const copia = paginaOriginal.cloneNode(true);
+
+    copia.querySelectorAll(".selecionado").forEach((el) => {
+      el.classList.remove("selecionado");
+    });
+
+    copia.querySelectorAll("[contenteditable]").forEach((el) => {
+      el.removeAttribute("contenteditable");
+    });
+
+    copia
+      .querySelectorAll("select, .controles-zoom-foto, .botao-excluir-memoria")
+      .forEach((el) => el.remove());
+
+    Object.assign(copia.style, {
+      width: `${largura}px`,
+      height: `${altura}px`,
+      minHeight: "0",
+      maxHeight: "none",
+      aspectRatio: "auto",
+      margin: "0",
+    });
+
+    const moldura = document.createElement("div");
+    moldura.className = "pagina-escalada";
+    moldura.dataset.largura = String(largura);
+    moldura.dataset.altura = String(altura);
+    moldura.appendChild(copia);
+
+    return moldura;
+  }
+
+  function ajustarEscalaFolhas() {
+    [esquerda, direita].forEach((folha) => {
+      const moldura = folha.querySelector(".pagina-escalada");
+      if (!moldura) return;
+
+      const largura = Number(moldura.dataset.largura);
+      const altura = Number(moldura.dataset.altura);
+      if (!largura || !altura) return;
+
+      const escala = Math.min(
+        folha.clientWidth / largura,
+        folha.clientHeight / altura,
+      );
+
+      moldura.style.width = `${largura * escala}px`;
+      moldura.style.height = `${altura * escala}px`;
+
+      const paginaCopiada = moldura.firstElementChild;
+      paginaCopiada.style.transformOrigin = "top left";
+      paginaCopiada.style.transform = `scale(${escala})`;
+    });
+  }
+
+  function mostrarPagina(destino) {
+    indice = destino;
+    esquerda.replaceChildren();
+    direita.replaceChildren();
+
+    if (indice === 0) {
+      direita.appendChild(clonarPaginaParaLeitor(paginas[0]));
+      esquerda.classList.add("folha-vazia");
+      direita.classList.remove("folha-vazia");
+    } else {
+      esquerda.classList.remove("folha-vazia");
+      direita.classList.remove("folha-vazia");
+
+      if (paginas[indice]) {
+        esquerda.appendChild(clonarPaginaParaLeitor(paginas[indice]));
+      } else {
+        esquerda.classList.add("folha-vazia");
+      }
+
+      if (paginas[indice + 1]) {
+        direita.appendChild(clonarPaginaParaLeitor(paginas[indice + 1]));
+      } else {
+        direita.classList.add("folha-vazia");
+      }
+    }
+
+    // Cor de fundo de cada folha acompanha a página que está nela
+    esquerda.style.background = "";
+    esquerda.style.backgroundColor = "";
+    direita.style.backgroundColor = "";
+
+    if (indice === 0 && paginas[0].classList.contains("capa-mural-preview")) {
+      esquerda.style.background = "linear-gradient(90deg, #120b07, #2b1b11)";
+    }
+
+    const paginaEsq = indice === 0 ? null : paginas[indice];
+    const paginaDir = indice === 0 ? paginas[0] : paginas[indice + 1];
+
+    if (paginaEsq) {
+      esquerda.style.backgroundColor =
+        getComputedStyle(paginaEsq).backgroundColor;
+    }
+
+    if (paginaDir) {
+      direita.style.backgroundColor =
+        getComputedStyle(paginaDir).backgroundColor;
+    }
+
+    contador.textContent =
+      indice === 0
+        ? `Capa · ${paginas.length} página(s) no total`
+        : `Páginas ${indice + 1}${paginas[indice + 1] ? `–${indice + 2}` : ""} de ${paginas.length}`;
+
+    anterior.disabled = indice === 0;
+    proxima.disabled =
+      indice === 0 ? paginas.length <= 1 : indice + 2 >= paginas.length;
+
+    ajustarEscalaFolhas();
+  }
+
+  anterior.addEventListener("click", () => {
+    if (indice === 1) {
+      mostrarPagina(0);
+    } else if (indice > 1) {
+      mostrarPagina(indice - 2);
+    }
+  });
+
+  proxima.addEventListener("click", () => {
+    if (indice === 0) {
+      mostrarPagina(1);
+    } else if (indice + 2 < paginas.length) {
+      mostrarPagina(indice + 2);
+    }
+  });
+
+  leitor.addEventListener("click", (evento) => {
+    if (evento.target === leitor) leitor.remove();
+  });
+
+  const estilo = document.createElement("style");
+  estilo.textContent = `
+    .leitor-livro-memora {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(25, 15, 10, .92);
+    }
+
+    .livro-memora {
+      width: min(1200px, 100%);
+      height: min(95vh, 1000px);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      color: #fff8ef;
+    }
+
+    .barra-leitor-memora,
+    .navegacao-livro-memora {
+      flex: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .paginas-abertas-memora {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 3px;
+      perspective: 1800px;
+    }
+
+    .folha-memora {
+      position: relative;
+      box-sizing: border-box;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fffaf2;
+      box-shadow: 0 8px 30px #0005;
+      transform-origin: left center;
+      animation: entrada-folha-memora .35s ease both;
+    }
+
+    .folha-esquerda { border-radius: 8px 0 0 8px; }
+    .folha-direita { border-radius: 0 8px 8px 0; }
+    .folha-vazia { background: linear-gradient(90deg, #eadbc7, #fffaf2); }
+
+    .pagina-escalada {
+      position: relative;
+      flex: none;
+      overflow: hidden;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .pagina-escalada > * {
+      position: absolute !important;
+      top: 0;
+      left: 0;
+      margin: 0 !important;
+    }
+
+    .pagina-escalada .controles-pagina-album,
+    .pagina-escalada .botao-excluir-memoria,
+    .pagina-escalada .controles-zoom-foto {
+      display: none !important;
+    }
+
+    .pagina-escalada .item-memoria {
+      resize: none !important;
+    }
+
+    .pagina-escalada .item-memoria.postit {
+      overflow: hidden;
+    }
+
+    @keyframes entrada-folha-memora {
+      from { opacity: .45; transform: rotateY(-5deg); }
+      to { opacity: 1; transform: rotateY(0); }
+    }
+
+    @media (max-width: 700px) {
+      .paginas-abertas-memora { grid-template-columns: minmax(0, 1fr); }
+      .folha-esquerda { display: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .folha-memora { animation: none; }
+    }
+  `;
+
+  // Moldura dourada: aplicada DEPOIS do CSS base para não ser sobrescrita
+  const estiloMoldura = document.createElement("style");
+  estiloMoldura.textContent = `
+    .paginas-abertas-memora {
+      box-sizing: border-box;
+      padding: 7px;
+      border-radius: 12px;
+      background: linear-gradient(
+        135deg,
+        #f3d99b 0%,
+        #c9954b 28%,
+        #8a5a22 50%,
+        #e4c783 75%,
+        #b9853e 100%
+      );
+      box-shadow:
+        0 0 0 1px #5a3a14,
+        0 12px 40px rgba(0, 0, 0, 0.55),
+        inset 0 0 0 1px rgba(255, 244, 214, 0.55);
+    }
+
+    .folha-esquerda { border-radius: 6px 0 0 6px; }
+    .folha-direita { border-radius: 0 6px 6px 0; }
+
+    .pagina-escalada > * {
+      border-radius: 0 !important;
+    }
+
+    .pagina-escalada > .pagina-mural-album,
+    .pagina-escalada > .capa-preview {
+      border: 0 !important;
+    }
+  `;
+
+  leitor.appendChild(estilo);
+  leitor.appendChild(estiloMoldura);
+  document.body.appendChild(leitor);
+  mostrarPagina(0);
+
+  new ResizeObserver(ajustarEscalaFolhas).observe(paginasAbertas);
+});
+
+/* =========================================================
+   AVISO: EDITOR ABERTO SEM O ID DO EVENTO
+========================================================= */
+
+if (!EVENTO_ID) {
+  const aviso = document.createElement("div");
+  aviso.textContent =
+    "⚠ O mural não carregou: abra o editor com ?eventoId=... na URL (pelo Dashboard).";
+
+  Object.assign(aviso.style, {
+    position: "sticky",
+    top: "0",
+    zIndex: "99999",
+    padding: "10px 16px",
+    background: "#b3261e",
+    color: "#fff",
+    font: "bold 14px Arial, sans-serif",
+    textAlign: "center",
+  });
+
+  document.body.prepend(aviso);
+}
+
+/* =========================================================
+   SALVAMENTO DO ÁLBUM (Supabase · tabela album_rascunhos)
+========================================================= */
+
+const botaoSalvarAlbum = document.getElementById("salvarRascunhoLateral");
+const statusSalvamento = document.getElementById("statusSalvamento");
+
+const CAMPOS_TEXTO_ALBUM = ["titulo", "nomes", "dataEvento", "fraseCapa", "corTexto"];
+const INTERVALO_AUTOSAVE_MS = 20000;
+
+let usuarioAtual = null;
+let salvandoAlbum = false;
+let ultimoSnapshotSalvo = "";
+let rascunhoPronto = false; // só permite salvar depois de ler o rascunho existente
+
+function mostrarStatusSalvamento(texto, erro = false) {
+  if (!statusSalvamento) return;
+
+  statusSalvamento.textContent = texto;
+  statusSalvamento.style.color = erro ? "#b3261e" : "";
+}
+
+async function garantirUsuario() {
+  if (usuarioAtual) return usuarioAtual;
+
+  const { data } = await supabaseClient.auth.getSession();
+  usuarioAtual = data?.session?.user || null;
+
+  return usuarioAtual;
+}
+
+/* Reúne tudo o que o usuário construiu em um único objeto. */
+function coletarEstadoAlbum() {
+  const campos = {};
+
+  CAMPOS_TEXTO_ALBUM.forEach((id) => {
+    campos[id] = document.getElementById(id)?.value ?? "";
+  });
+
+  const memorias = {};
+
+  elementosMemoriaPaginas.forEach((lista, chave) => {
+    memorias[chave] = lista.map((item) => ({ ...item }));
+  });
+
+  return {
+    versao: 1,
+    campos,
+    modeloCapa,
+    fotoCapa,
+    usarFotoNaCapa,
+    ajusteFotoCapa: { ...ajusteFotoCapa },
+    posicoesTextosCapa: Object.fromEntries(posicoesTextosCapa),
+    selecionadas: [...selecionadas],
+    layoutPadraoAlbum,
+    layoutsPaginas: Object.fromEntries(layoutsPaginas),
+    tiposPaginas: Object.fromEntries(tiposPaginas),
+    ajustesFotosInternas: Object.fromEntries(ajustesFotosInternas),
+    ordemAlbum: [...ordemAlbum],
+    posicoesFotos: Object.fromEntries(posicoesFotosPagina),
+    memorias,
+    muralAdicionadoAoAlbum,
+    posicaoMuralAposPaginaFoto,
+  };
+}
+
+/* Devolve ao editor o que foi salvo. */
+function aplicarEstadoAlbum(dados) {
+  CAMPOS_TEXTO_ALBUM.forEach((id) => {
+    const campo = document.getElementById(id);
+
+    if (campo && dados.campos && dados.campos[id] !== undefined) {
+      campo.value = dados.campos[id];
+    }
+  });
+
+  if (dados.modeloCapa && fundosCapa[dados.modeloCapa]) {
+    modeloCapa = dados.modeloCapa;
+  }
+
+  fotoCapa = dados.fotoCapa || null;
+  usarFotoNaCapa = Boolean(dados.usarFotoNaCapa && fotoCapa);
+
+  ajusteFotoCapa = {
+    x: 0,
+    y: 0,
+    zoom: 1,
+    rotacao: 0,
+    ...(dados.ajusteFotoCapa || {}),
+  };
+
+  // Evita que o enquadramento salvo seja zerado na primeira renderização
+  chaveAjusteFoto = usarFotoNaCapa ? `${modeloCapa}:${fotoCapa}` : "";
+
+  posicoesTextosCapa.clear();
+  Object.entries(dados.posicoesTextosCapa || {}).forEach(([chave, valor]) => {
+    posicoesTextosCapa.set(chave, valor);
+  });
+
+  selecionadas.clear();
+  (dados.selecionadas || []).forEach((nome) => selecionadas.add(nome));
+
+  layoutPadraoAlbum = dados.layoutPadraoAlbum || "elegante";
+
+  const seletorPadrao = document.getElementById("layoutPadrao");
+  if (seletorPadrao) seletorPadrao.value = layoutPadraoAlbum;
+
+  layoutsPaginas.clear();
+  Object.entries(dados.layoutsPaginas || {}).forEach(([chave, valor]) => {
+    layoutsPaginas.set(chave, valor);
+  });
+
+  tiposPaginas.clear();
+  Object.entries(dados.tiposPaginas || {}).forEach(([chave, valor]) => {
+    tiposPaginas.set(chave, valor);
+  });
+
+  ajustesFotosInternas.clear();
+  Object.entries(dados.ajustesFotosInternas || {}).forEach(([chave, valor]) => {
+    ajustesFotosInternas.set(chave, valor);
+  });
+
+  ordemAlbum = Array.isArray(dados.ordemAlbum) ? [...dados.ordemAlbum] : [];
+
+  posicoesFotosPagina.clear();
+  Object.entries(dados.posicoesFotos || {}).forEach(([chave, valor]) => {
+    posicoesFotosPagina.set(chave, valor);
+  });
+
+  elementosMemoriaPaginas.clear();
+  Object.entries(dados.memorias || {}).forEach(([chave, lista]) => {
+    elementosMemoriaPaginas.set(chave, Array.isArray(lista) ? lista : []);
+  });
+
+  muralAdicionadoAoAlbum = Boolean(dados.muralAdicionadoAoAlbum);
+  posicaoMuralAposPaginaFoto = Number(dados.posicaoMuralAposPaginaFoto) || 0;
+
+  document.querySelectorAll(".modelo-capa").forEach((item) => {
+    const ativo = item.dataset.modelo === modeloCapa;
+    item.classList.toggle("ativo", ativo);
+    item.setAttribute("aria-pressed", String(ativo));
+  });
+}
+
+async function carregarRascunhoAlbum() {
   if (!EVENTO_ID) {
-    window.location.replace("dashboard.html");
+    mostrarStatusSalvamento(
+      "Abra o editor pelo Dashboard para poder salvar o álbum.",
+      true,
+    );
     return;
   }
 
-  const { data: evento, error } = await supabaseClient
-    .from("eventos")
-    .select("id, nome, slug, storage_folder, evento_ativo, owner_id")
-    .eq("id", EVENTO_ID)
-    .eq("owner_id", sessao.user.id)
-    .maybeSingle();
+  const usuario = await garantirUsuario();
 
-  if (error) {
-    console.error("Erro ao validar o evento:", error);
-    alert("Não foi possível validar seu acesso ao evento.");
-    window.location.replace("dashboard.html");
+  if (!usuario) {
+    mostrarStatusSalvamento(
+      "Entre na sua conta para salvar e recuperar o álbum.",
+      true,
+    );
     return;
   }
 
-  if (!evento || evento.evento_ativo !== true) {
-    alert("Você não tem acesso a este evento ou ele está inativo.");
-    window.location.replace("dashboard.html");
-    return;
-  }
+  try {
+    const { data, error } = await supabaseClient
+      .from("album_rascunhos")
+      .select("dados, atualizado_em")
+      .eq("evento_id", EVENTO_ID)
+      .maybeSingle();
 
-  if ((evento.storage_folder || evento.slug) !== EVENTO) {
-    alert("O endereço não corresponde ao evento selecionado.");
-    window.location.replace("dashboard.html");
-    return;
-  }
+    if (error) throw error;
 
-  await carregarFotos();
+    if (data?.dados) {
+      aplicarEstadoAlbum(data.dados);
+
+      const quando = new Date(data.atualizado_em).toLocaleString("pt-BR");
+      mostrarStatusSalvamento(`Álbum recuperado (salvo em ${quando}).`);
+    } else {
+      mostrarStatusSalvamento("Nenhum rascunho salvo ainda para este evento.");
+    }
+
+    ultimoSnapshotSalvo = JSON.stringify(coletarEstadoAlbum());
+    rascunhoPronto = true;
+  } catch (erro) {
+    console.error("Erro ao carregar o rascunho do álbum:", erro);
+
+    mostrarStatusSalvamento(
+      "Não foi possível acessar o rascunho. Confira se a tabela album_rascunhos foi criada no Supabase.",
+      true,
+    );
+  }
 }
 
-validarAcessoECarregarFotos();
+async function salvarAlbum({ silencioso = false } = {}) {
+  if (salvandoAlbum) return false;
 
+  if (!rascunhoPronto) {
+    if (!silencioso) {
+      mostrarStatusSalvamento(
+        "O rascunho ainda não foi carregado. Recarregue a página e tente de novo.",
+        true,
+      );
+    }
+    return false;
+  }
 
-function adicionarBotaoVoltarDashboard() {
-  if (document.getElementById("memora-voltar-dashboard")) return;
+  const snapshot = JSON.stringify(coletarEstadoAlbum());
 
-  const botao = document.createElement("a");
-  botao.id = "memora-voltar-dashboard";
-  botao.href = "dashboard.html";
-  botao.textContent = "← Voltar ao painel";
-  botao.setAttribute("aria-label", "Voltar ao Dashboard do Memora");
+  if (silencioso && snapshot === ultimoSnapshotSalvo) return true;
 
-  Object.assign(botao.style, {
-    position: "fixed",
-    top: "16px",
-    left: "16px",
-    zIndex: "10000",
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "11px 16px",
-    border: "1px solid #c6a15b",
-    borderRadius: "10px",
-    background: "rgba(23, 23, 23, 0.96)",
-    color: "#e4c783",
-    font: "600 14px Arial, sans-serif",
-    textDecoration: "none",
-    boxShadow: "0 4px 16px rgba(0,0,0,0.3)"
+  const usuario = await garantirUsuario();
+
+  if (!usuario) {
+    if (!silencioso) {
+      mostrarStatusSalvamento("Entre na sua conta para salvar o álbum.", true);
+    }
+    return false;
+  }
+
+  salvandoAlbum = true;
+
+  if (botaoSalvarAlbum) botaoSalvarAlbum.disabled = true;
+  if (!silencioso) mostrarStatusSalvamento("Salvando o álbum...");
+
+  try {
+    const { error } = await supabaseClient.from("album_rascunhos").upsert(
+      {
+        evento_id: EVENTO_ID,
+        owner_id: usuario.id,
+        dados: JSON.parse(snapshot),
+        atualizado_em: new Date().toISOString(),
+      },
+      { onConflict: "evento_id" },
+    );
+
+    if (error) throw error;
+
+    ultimoSnapshotSalvo = snapshot;
+
+    mostrarStatusSalvamento(
+      `${silencioso ? "Salvo automaticamente" : "Álbum salvo"} às ${new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}.`,
+    );
+
+    return true;
+  } catch (erro) {
+    console.error("Erro ao salvar o álbum:", erro);
+
+    mostrarStatusSalvamento(
+      "Não foi possível salvar. Confira a conexão e as permissões do Supabase.",
+      true,
+    );
+
+    return false;
+  } finally {
+    salvandoAlbum = false;
+    if (botaoSalvarAlbum) botaoSalvarAlbum.disabled = false;
+  }
+}
+
+function iniciarSalvamentoAutomatico() {
+  botaoSalvarAlbum?.addEventListener("click", () => salvarAlbum());
+
+  // Salva sozinho a cada 20 s, mas só se algo mudou
+  setInterval(() => {
+    if (!document.hidden) salvarAlbum({ silencioso: true });
+  }, INTERVALO_AUTOSAVE_MS);
+
+  // Ao trocar de aba ou minimizar, salva na hora
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) salvarAlbum({ silencioso: true });
+  });
+}
+
+/* =========================================================
+   INÍCIO DO EDITOR
+========================================================= */
+
+document
+  .getElementById("voltarEdicaoLateral")
+  ?.addEventListener("click", () => {
+    salvarAlbum({ silencioso: true });
+    botaoVoltar.click();
   });
 
-  document.body.appendChild(botao);
+async function iniciarEditor() {
+  // 1) recupera o que foi salvo; 2) só então carrega mural e fotos
+  await carregarRascunhoAlbum();
+
+  carregarMensagensMuralAlbum();
+  carregarFotos();
+
+  iniciarSalvamentoAutomatico();
 }
 
-if (document.readyState === "loading") {
-  document.addEventListener(
-    "DOMContentLoaded",
-    adicionarBotaoVoltarDashboard
-  );
-} else {
-  adicionarBotaoVoltarDashboard();
-}
-
+iniciarEditor();

@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#17110d" />
+    <title>Mural de Recados | Memora</title>
+
+    <style>
+      :root {
+        --gold: #c6a15b;
+        --gold-light: #f0d18c;
+        --text: #f8eee0;
+        --muted: #c9bca9;
+        --panel: rgba(23, 19, 16, 0.94);
+        --border: rgba(198, 161, 91, 0.45);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        padding: 24px;
+        color: var(--text);
+        font-family: Arial, Helvetica, sans-serif;
+        background: radial-gradient(ellipse at top, #49301e 0%, #17110d 65%);
+      }
+
+      button,
+      a {
+        font: inherit;
+      }
+
+      .page {
+        width: min(100%, 1500px);
+        margin: 0 auto;
+      }
+
+      /* CENÁRIO DO MURAL */
+
+      .board-stage {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 3 / 2;
+        overflow: hidden;
+        border-radius: 14px;
+        background: #21150f;
+        box-shadow: 0 18px 60px rgba(0, 0, 0, 0.42);
+      }
+
+      .board-background {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+        object-fit: cover;
+      }
+
+      /* CABEÇALHO SOBRE A ÁREA SUPERIOR DA IMAGEM */
+
+      .wall-logo {
+        position: absolute;
+        z-index: 2;
+        left: 5%;
+        top: 4%;
+        width: 17%;
+        max-height: 10%;
+        object-fit: contain;
+      }
+
+      .wall-heading {
+        position: absolute;
+        z-index: 2;
+        top: 3.5%;
+        left: 25%;
+        width: 50%;
+        text-align: center;
+      }
+
+      .wall-heading h1 {
+        margin: 0;
+        color: var(--gold-light);
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: clamp(20px, 3.6vw, 52px);
+        font-weight: normal;
+        line-height: 1.1;
+      }
+
+      .wall-heading p {
+        margin: 6px 0 0;
+        color: #f5e6d2;
+        font-size: clamp(9px, 1.25vw, 17px);
+        letter-spacing: 0.3px;
+      }
+
+      .event-line {
+        margin-top: 1%;
+        color: var(--gold-light);
+        font-size: clamp(8px, 1vw, 14px);
+      }
+
+      .back-link {
+        position: absolute;
+        z-index: 3;
+        top: 5%;
+        right: 3%;
+        padding: 9px 12px;
+        border: 1px solid var(--gold);
+        border-radius: 9px;
+        color: var(--gold-light);
+        background: rgba(24, 17, 12, 0.72);
+        text-decoration: none;
+        font-size: clamp(9px, 0.9vw, 13px);
+        white-space: nowrap;
+      }
+
+      .back-link:hover {
+        background: rgba(198, 161, 91, 0.18);
+      }
+
+      /* CAMADA ONDE O JAVASCRIPT POSICIONARÁ OS POST-ITS */
+
+      .postits-layer {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+      }
+
+      .postit {
+        position: absolute;
+        left: var(--left);
+        top: var(--top);
+        width: var(--width);
+        height: var(--height);
+        padding: 1.4% 1.2% 1%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 5%;
+        overflow: hidden;
+        border: 0;
+        background: transparent;
+        color: #362920;
+        text-align: center;
+        cursor: pointer;
+        pointer-events: auto;
+        transform: translate(-50%, -50%) rotate(var(--rotation, 0deg));
+        font-family: "Segoe Print", "Bradley Hand", cursive;
+      }
+
+      .postit:hover {
+        filter: brightness(1.04);
+      }
+
+      .postit:focus-visible {
+        outline: 2px solid #fff4d6;
+        outline-offset: 2px;
+      }
+
+      .postit-message {
+        display: -webkit-box;
+        max-width: 100%;
+        overflow: hidden;
+        color: #382a27;
+        font-size: clamp(8px, 1.05vw, 15px);
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+        white-space: pre-wrap;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 5;
+        line-clamp: 5;
+      }
+
+      .postit-name {
+        display: block;
+        max-width: 100%;
+        overflow: hidden;
+        color: #4a352a;
+        font-size: clamp(7px, 0.9vw, 12px);
+        font-style: italic;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      /* NAVEGAÇÃO ENTRE MURAIS */
+
+      .board-pagination {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        padding: 18px 8px;
+      }
+
+      .page-button {
+        padding: 10px 15px;
+        border: 1px solid var(--gold);
+        border-radius: 9px;
+        color: var(--gold-light);
+        background: transparent;
+        cursor: pointer;
+      }
+
+      .page-button:hover:not(:disabled) {
+        background: rgba(198, 161, 91, 0.14);
+      }
+
+      .page-button:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+      }
+
+      #pageInfo {
+        color: var(--muted);
+        font-size: 13px;
+        text-align: center;
+      }
+
+      .status {
+        min-height: 22px;
+        margin: 8px 0 18px;
+        color: var(--gold-light);
+        text-align: center;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .status.error {
+        color: #ffc0b7;
+      }
+
+      /* LISTA DE APOIO PARA CELULARES */
+
+      .mobile-wall {
+        display: none;
+      }
+
+      .mobile-title {
+        color: var(--gold-light);
+        font-family: Georgia, "Times New Roman", serif;
+        font-weight: normal;
+      }
+
+      .mobile-card {
+        margin-bottom: 12px;
+        padding: 16px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--panel);
+      }
+
+      .mobile-card h3 {
+        margin: 0 0 8px;
+        color: var(--gold-light);
+        font-size: 15px;
+      }
+
+      .mobile-card p {
+        margin: 0;
+        color: var(--text);
+        line-height: 1.6;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+
+      .mobile-date {
+        display: block;
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .empty {
+        padding: 24px;
+        border: 1px dashed var(--border);
+        border-radius: 12px;
+        color: var(--muted);
+        text-align: center;
+        line-height: 1.6;
+      }
+
+      footer {
+        padding: 10px 0 6px;
+        color: #a99b87;
+        text-align: center;
+        font-size: 11px;
+      }
+
+      @media (max-width: 680px) {
+        body {
+          padding: 10px;
+        }
+
+        .board-stage {
+          border-radius: 8px;
+        }
+
+        .wall-logo {
+          display: none;
+        }
+
+        .wall-heading {
+          top: 4%;
+          left: 4%;
+          width: 62%;
+          text-align: left;
+        }
+
+        .wall-heading h1 {
+          font-size: clamp(17px, 5vw, 25px);
+        }
+
+        .wall-heading p {
+          font-size: 10px;
+        }
+
+        .event-line {
+          margin-top: 5px;
+          font-size: 9px;
+        }
+
+        .back-link {
+          top: 5%;
+          right: 3%;
+          padding: 7px 8px;
+          font-size: 9px;
+        }
+
+        .postits-layer {
+          display: none;
+        }
+
+        .mobile-wall {
+          display: block;
+          margin-top: 12px;
+        }
+
+        .board-pagination {
+          gap: 8px;
+          padding: 14px 0;
+        }
+
+        .page-button {
+          padding: 9px 10px;
+          font-size: 12px;
+        }
+
+        #pageInfo {
+          font-size: 11px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          transition: none !important;
+        }
+      }
+
+      .hidden-messages-panel {
+        margin-top: 18px;
+        padding: 20px;
+        border: 1px solid rgba(198, 161, 91, 0.4);
+        border-radius: 14px;
+        background: rgba(23, 19, 16, 0.94);
+        color: #f5f1e9;
+      }
+
+      .hidden-messages-panel h2 {
+        margin-top: 0;
+        color: #c6a15b;
+        font-size: 20px;
+      }
+
+      .hidden-messages-panel > p {
+        color: #c9c1b5;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .hidden-messages-list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .hidden-message-card {
+        padding: 14px;
+        border: 1px solid rgba(198, 161, 91, 0.3);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.035);
+      }
+
+      .hidden-message-card strong {
+        display: block;
+        margin-bottom: 8px;
+        color: #e4c783;
+      }
+
+      .hidden-message-card p {
+        color: #f5f1e9;
+        line-height: 1.6;
+        overflow-wrap: anywhere;
+        white-space: pre-wrap;
+      }
+
+      .hidden-message-card button {
+        padding: 9px 12px;
+        border: 1px solid #c6a15b;
+        border-radius: 8px;
+        background: transparent;
+        color: #e4c783;
+        cursor: pointer;
+      }
+
+      .hidden-message-card button:hover {
+        background: rgba(198, 161, 91, 0.12);
+      }
+    </style>
+  </head>
+
+  <body>
+    <main class="page">
+      <section class="board-stage" aria-label="Mural de recados do evento">
+        <img
+          class="board-background"
+          src="img/mural-postits-sem-texto.png"
+          alt=""
+        />
+
+        <img
+          class="wall-logo"
+          src="img/memora.png"
+          alt="Memora — Diário Digital de Memórias"
+        />
+
+        <header class="wall-heading">
+          <h1>Mural de Recados</h1>
+          <p>Palavras que também viram lembranças.</p>
+          <div class="event-line">
+            Evento: <span id="tituloEvento">Carregando...</span>
+          </div>
+        </header>
+
+        <a id="voltarDiario" class="back-link" href="dashboard.html">
+          ← Voltar ao diário
+        </a>
+
+        <div
+          id="postitsLayer"
+          class="postits-layer"
+          aria-label="Mensagens nos post-its"
+        ></div>
+      </section>
+
+      <section
+        id="hiddenMessagesPanel"
+        class="hidden-messages-panel"
+        hidden
+        aria-labelledby="hiddenMessagesTitle"
+      >
+        <h2 id="hiddenMessagesTitle">Mensagens ocultas</h2>
+        <p>
+          Estes recados não aparecem no mural. Você pode voltar a exibi-los
+          quando quiser.
+        </p>
+        <div id="hiddenMessagesList" class="hidden-messages-list"></div>
+      </section>
+
+      <section class="mobile-wall" aria-label="Mensagens do evento">
+        <h2 class="mobile-title">Mensagens recebidas</h2>
+        <div id="lista" class="list">
+          <div class="empty">Carregando as mensagens...</div>
+        </div>
+      </section>
+
+      <nav class="board-pagination" aria-label="Navegação entre murais">
+        <button id="prevMural" class="page-button" type="button" disabled>
+          ← Mural anterior
+        </button>
+
+        <span id="pageInfo">Carregando mural...</span>
+
+        <button id="nextMural" class="page-button" type="button" disabled>
+          Próximo mural →
+        </button>
+      </nav>
+
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+
+      <footer>Memora — Diário Digital de Memórias</footer>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="mural-admin.js"></script>
+  </body>
+</html>

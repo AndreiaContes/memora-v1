@@ -242,19 +242,20 @@
     }
 
     .capa-preview {
-      position: relative;
-      isolation: isolate;
-      width: min(100%,350px);
-      aspect-ratio: 2/3;
-      margin: auto;
-      overflow: hidden;
-      background-color: #fff8ef;
-      background-position: center;
-      background-size: 100% 100%;
-      background-repeat: no-repeat;
-      color: var(--cor-texto-capa,#57351f);
-      text-align: center;
-    }
+  position: relative;
+  isolation: isolate;
+  box-sizing: border-box;
+  width: min(100%, 720px);
+  aspect-ratio: 1 / 1;
+  margin: auto;
+  overflow: hidden;
+  background-color: #fff8ef;
+  background-position: center;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  color: var(--cor-texto-capa, #57351f);
+  text-align: center;
+}
 
     .conteudo-capa {
       position: absolute;
@@ -675,6 +676,7 @@
   top: 50%;
   width: 100%;
   height: 100%;
+  margin: 0;
   transform-origin: center center;
   will-change: transform;
 }
@@ -1328,7 +1330,344 @@
 }
 
 
+    /* CONTROLES DE SEQUÊNCIA DO ÁLBUM */
+    #etapaMuralAlbum {
+      margin-top: 16px;
+    }
 
+    #posicaoMuralAlbum {
+      max-width: 420px;
+    }
+
+    #statusMuralAlbum {
+      min-height: 20px;
+      margin-top: 12px;
+    }
+
+    /* PÁGINA DE MURAL DENTRO DO ÁLBUM */
+    
+/* Página de mural ajustada ao tamanho do álbum */
+
+/* Mural limitado à largura da página do álbum */
+.pagina-mural-album {
+  position: relative;
+  box-sizing: border-box;
+  width: min(100%, 720px);
+  max-width: 720px;
+  aspect-ratio: 3 / 2;
+  min-height: 0;
+  padding: 0 !important;
+  margin: 18px auto;
+  overflow: hidden;
+  border: 1px solid #dfc7ac;
+  border-radius: 10px;
+  background:
+    #21160f
+    url("img/mural-postits-sem-texto.png")
+    center / 100% 100% no-repeat;
+  break-inside: avoid;
+}
+
+
+
+    .mural-album-logo {
+      position: absolute;
+      top: 3%;
+      left: 5%;
+      width: 14%;
+      height: 10%;
+      object-fit: contain;
+    }
+
+    .mural-album-cabecalho {
+      position: absolute;
+      top: 3%;
+      left: 23%;
+      width: 54%;
+      color: #f0d18c;
+      text-align: center;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(12px, 2.5vw, 30px);
+      font-weight: normal;
+      line-height: 1.1;
+    }
+
+    .mural-album-evento {
+      display: block;
+      margin-top: 4px;
+      color: #f5e6d2;
+      font: clamp(7px, 0.8vw, 11px) Arial, sans-serif;
+    }
+
+    .postit-album-item {
+      position: absolute;
+      left: var(--left);
+      top: var(--top);
+      width: var(--width);
+      height: var(--height);
+      padding: 1.1%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 4%;
+      overflow: hidden;
+      text-align: center;
+      color: #382a27;
+      font-family: "Segoe Print", "Bradley Hand", cursive;
+      transform: translate(-50%, -50%) rotate(var(--rotation, 0deg));
+    }
+
+    .postit-album-texto {
+      display: -webkit-box;
+      max-width: 100%;
+      overflow: hidden;
+      color: #382a27;
+      font-size: clamp(7px, 0.9vw, 12px);
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 5;
+      line-clamp: 5;
+    }
+
+    .postit-album-nome {
+      max-width: 100%;
+      overflow: hidden;
+      color: #4a352a;
+      font-size: clamp(6px, 0.75vw, 10px);
+      font-style: italic;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 680px) {
+      .pagina-mural-album {
+        border-radius: 6px;
+      }
+
+      #posicaoMuralAlbum {
+        max-width: 100%;
+      }
+    }
+
+    .controles-pagina-album {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 12px;
+  position: relative;
+  z-index: 20;
+}
+
+.controles-pagina-album select {
+  max-width: 160px;
+}
+
+/* A escolha do mural agora é feita no seletor de cada página */
+#etapaMuralAlbum {
+  display: none !important;
+}
+
+
+.acoes-foto-capa {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.modal-fotos-capa {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: #21160fcc;
+}
+
+.painel-fotos-capa {
+  width: min(900px, 100%);
+  max-height: 85vh;
+  overflow: auto;
+  padding: 20px;
+  border-radius: 14px;
+  background: #fffaf4;
+  box-shadow: 0 10px 40px #00000040;
+}
+
+.cabecalho-fotos-capa {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.cabecalho-fotos-capa h3 {
+  margin: 0;
+  color: #57351f;
+}
+
+.grade-fotos-capa {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.opcao-foto-capa {
+  min-width: 0;
+  padding: 4px;
+  border: 1px solid #dfc7ac;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+}
+
+.opcao-foto-capa:hover {
+  border-color: #b9853e;
+  box-shadow: 0 0 0 2px #b9853e30;
+}
+
+.opcao-foto-capa img {
+  display: block;
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+.capa-mural-preview .pagina-mural-album {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+
+.acoes-foto-capa {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.modal-fotos-capa {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: #21160fcc;
+}
+
+.painel-fotos-capa {
+  box-sizing: border-box;
+  width: min(900px, 100%);
+  max-height: 85vh;
+  overflow: auto;
+  padding: 20px;
+  border-radius: 14px;
+  background: #fffaf4;
+  box-shadow: 0 10px 40px #00000040;
+}
+
+.cabecalho-fotos-capa {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.cabecalho-fotos-capa h3 {
+  margin: 0;
+  color: #57351f;
+}
+
+.grade-fotos-capa {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.opcao-foto-capa {
+  min-width: 0;
+  padding: 4px;
+  border: 1px solid #dfc7ac;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+}
+
+.opcao-foto-capa:hover {
+  border-color: #b9853e;
+  box-shadow: 0 0 0 2px #b9853e30;
+}
+
+.opcao-foto-capa img {
+  display: block;
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+.bloco-controles-pagina {
+  width: min(100%, 720px);
+  margin: 24px auto 0;
+}
+
+.bloco-controles-pagina + .album-pagina {
+  margin-top: 8px;
+}
+
+/* ===== Mural: mesma proporção do mural-admin ===== */
+.pagina-mural-album,
+.capa-preview.capa-mural-preview {
+  container-type: inline-size;
+}
+
+/* A capa do tipo mural tem a proporção da imagem (3:2), não 1:1 */
+.capa-preview.capa-mural-preview {
+  aspect-ratio: 3 / 2;
+}
+
+.mural-album-cabecalho {
+  font-size: clamp(8px, 3.6cqw, 52px);
+}
+
+.mural-album-evento {
+  font-size: clamp(5px, 1cqw, 14px);
+}
+
+.postit-album-item {
+  padding: 1.4% 1.2% 1%;
+  gap: 5%;
+}
+
+.postit-album-texto {
+  max-height: calc(1.3em * 5);
+  font-size: clamp(4px, 0.95cqw, 14px);
+  line-height: 1.3;
+  text-align: center;
+}
+
+.postit-album-nome {
+  font-size: clamp(4px, 0.9cqw, 12px);
+}
+
+/* Capa do tipo Mural: fundo escuro, no tema da imagem */
+.capa-preview.capa-mural-preview {
+  background-color: #21160f;
+}
 
   </style>
 </head>
@@ -1432,6 +1771,20 @@
               </span>
               <span class="nome-modelo">Contemporâneo</span>
             </button>
+
+            <button
+  type="button"
+  class="modelo-capa"
+  data-modelo="mural"
+  aria-pressed="false"
+>
+  <span class="mini-capa mini-mural">
+    <span class="mini-marca">MEMORA</span>
+    <span class="mini-titulo">Mural de Recados</span>
+    <span class="mini-flores">♥ ♥ ♥</span>
+  </span>
+  <span class="nome-modelo">Mural de Recados</span>
+</button>
           </div>
         </section>
 
@@ -1484,6 +1837,29 @@
     class="botao botao-secundario">
     Restaurar enquadramento
   </button>
+
+  
+<div class="acoes acoes-foto-capa">
+  <button
+    id="escolherFotoCapa"
+    type="button"
+    class="botao"
+  >
+    Escolher foto da capa
+  </button>
+
+  <button
+    id="removerFotoCapa"
+    type="button"
+    class="botao botao-secundario"
+  >
+    Remover foto
+  </button>
+</div>
+
+
+  
+
 </div>
 
 </div>
@@ -1492,26 +1868,97 @@
     
       </section>
 
+      
+      <!-- INSERÇÃO DO MURAL NA SEQUÊNCIA DO ÁLBUM -->
+      <section class="etapa" id="etapaMuralAlbum">
+        <h2>04. Organizar páginas do álbum</h2>
+
+        <p class="descricao">
+          Alterne entre páginas de fotografias e o Mural de Recados.
+          Escolha em que ponto da sequência deseja inserir o mural.
+          As mensagens publicadas serão distribuídas automaticamente
+          entre as páginas necessárias.
+        </p>
+
+        <label for="posicaoMuralAlbum">
+          Onde deseja inserir o mural?
+        </label>
+
+        <select
+          id="posicaoMuralAlbum"
+          class="campo"
+          disabled
+        >
+          <option value="">
+            Primeiro visualize o álbum
+          </option>
+        </select>
+
+        <div class="acoes">
+          <button
+            id="adicionarMuralAlbum"
+            class="botao"
+            type="button"
+            disabled
+          >
+            Inserir mural no álbum
+          </button>
+
+          <button
+            id="removerMuralAlbum"
+            class="botao botao-secundario"
+            type="button"
+            hidden
+          >
+            Remover mural do álbum
+          </button>
+        </div>
+
+        <p
+          id="statusMuralAlbum"
+          class="descricao"
+          role="status"
+          aria-live="polite"
+        ></p>
+      </section>
+      <!-- FIM DA INSERÇÃO DO MURAL -->
+
+
       <!-- PRÉ-VISUALIZAÇÃO FINAL DO ÁLBUM -->
       <section class="etapa" id="etapaFinal">
-        <h2>04. Pré-visualização do álbum</h2>
+        <h2>05. Pré-visualização do álbum</h2>
         <p class="descricao">
           Confira a capa e as páginas internas antes de preparar o PDF.
         </p>
 
-        <div class="acoes">
-          <button id="visualizarAlbum" class="botao" type="button">
-            Visualizar álbum
-          </button>
+        
+<div class="acoes">
+  <button
+    id="voltarEdicao"
+    class="botao botao-secundario"
+    type="button"
+    hidden
+  >
+    ← Voltar à edição
+  </button>
 
-          <button id="voltarEdicao" class="botao botao-secundario" type="button" hidden>
-            Voltar à edição
-          </button>
+  <button id="visualizarAlbum" class="botao" type="button">
+    Visualizar álbum
+  </button>
 
-          <button id="baixarPdf" class="botao botao-secundario" type="button">
-            Preparar PDF
-          </button>
-        </div>
+  <button
+    id="folhearAlbum"
+    class="botao"
+    type="button"
+    hidden
+  >
+    <span aria-hidden="true">📖</span>
+    Folhear álbum
+  </button>
+
+  
+</div>
+
 
        
 <p id="mensagemFinal" class="descricao" role="status" aria-live="polite"></p>
@@ -1528,8 +1975,19 @@
 </div>
 
 <div class="album-area-trabalho">
-  <aside class="painel-lateral-album" aria-label="Ajuda e comandos do álbum">
+  
+<aside class="painel-lateral-album" aria-label="Ajuda e comandos do álbum">
+
+    <button
+  type="button"
+  class="botao"
+  id="visualizarAlbumLateral"
+>
+  Editar páginas
+</button> 
+
     <h3>Como editar</h3>
+
     <ol>
       <li>Selecione as fotos na galeria.</li>
       <li>Escolha o modelo da capa.</li>
@@ -1538,6 +1996,8 @@
       <li>Escolha o estilo de cada página e confira o resultado.</li>
     </ol>
 
+    
+
     <h3>Comandos</h3>
     <button type="button" class="botao" id="salvarRascunhoLateral">
       Salvar álbum
@@ -1545,9 +2005,7 @@
     <button type="button" class="botao botao-secundario" id="voltarEdicaoLateral">
       Voltar à edição
     </button>
-    <button type="button" class="botao botao-secundario" id="visualizarAlbumLateral">
-      Pré-visualizar álbum
-    </button>
+   
 
     <p class="descricao" id="statusSalvamento" role="status"></p>
   </aside>

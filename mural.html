@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#171717">
+  <title>Mural de Recados | Memora</title>
+  <style>
+    :root{--gold:#c6a15b;--bg:#171717;--panel:rgba(23,23,23,.94);--muted:#c9c1b5;--border:#6b5734;--text:#f5f1e9}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;padding:24px;color:var(--text);font-family:Arial,Helvetica,sans-serif;background:linear-gradient(rgba(18,15,13,.82),rgba(18,15,13,.92)),url("img/fundo-editar-album.png") center/cover fixed}
+    .page{width:min(100%,980px);margin:0 auto}
+    .top{display:flex;align-items:center;gap:16px;padding-bottom:18px;border-bottom:1px solid #c6a15b55;margin-bottom:28px}
+    .logo{width:54px;height:54px;object-fit:contain}.brand{flex:1}.brand h1{margin:0;color:var(--gold);font-size:26px}.brand p{margin:5px 0 0;color:var(--muted);font-size:13px}
+    .back,.btn{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--gold);border-radius:9px;padding:11px 15px;font:600 14px Arial,sans-serif;cursor:pointer;text-decoration:none}
+    .back,.btn.secondary{background:transparent;color:#e4c783}.btn.primary{background:var(--gold);color:var(--bg)}.btn:disabled{opacity:.55;cursor:wait}
+    .hero{text-align:center;margin:28px auto 30px;max-width:760px}.hero h2{font:normal clamp(28px,4vw,40px) Georgia,serif;color:#e4c783;margin:0 0 12px}.hero p{line-height:1.65;color:var(--muted);margin:0}
+    .layout{display:grid;grid-template-columns:minmax(280px,.82fr) minmax(0,1.18fr);gap:22px;align-items:start}
+    .panel{min-width:0;padding:22px;border:1px solid #c6a15b55;border-radius:18px;background:var(--panel);box-shadow:0 15px 40px #0004}
+    h3{margin:0 0 16px;color:var(--gold);font-size:20px}
+    label{display:block;margin-bottom:7px;font-size:13px;font-weight:700}
+    input,textarea{display:block;width:100%;padding:12px;border:1px solid #51483a;border-radius:9px;background:#292929;color:#fff;font:14px Arial,sans-serif;outline:none}
+    input:focus,textarea:focus{border-color:var(--gold);box-shadow:0 0 0 2px #c6a15b2a}textarea{min-height:145px;resize:vertical;line-height:1.5}
+    .field{margin-bottom:17px}.hint{font-size:12px;color:#bdb4a7;line-height:1.5;margin:7px 0 0}.counter{display:flex;justify-content:space-between;gap:8px;margin-top:7px;color:#bdb4a7;font-size:12px}
+    .status{margin-top:14px;font-size:13px;line-height:1.5;color:#e4c783}.status.error{color:#ffb9b2}.status.success{color:#bfe7c4}
+    .messages{display:grid;gap:12px}.empty{padding:20px;border:1px dashed #6b5734;border-radius:12px;color:var(--muted);line-height:1.6;text-align:center}
+    .message{padding:16px;border:1px solid #6b573455;border-radius:12px;background:#ffffff08}.message-head{display:flex;justify-content:space-between;gap:12px;align-items:baseline;margin-bottom:8px}.message-name{font-weight:700;color:#e4c783;overflow-wrap:anywhere}.message-date{font-size:11px;color:#a79d8f;white-space:nowrap}.message-body{margin:0;color:#f2ede4;line-height:1.65;overflow-wrap:anywhere;white-space:pre-wrap}
+    .footer{text-align:center;margin-top:32px;padding:20px 0;color:#aaa092;font-size:12px}
+    @media(max-width:760px){body{padding:14px;background-attachment:scroll}.layout{grid-template-columns:1fr}.panel{padding:18px}.top{flex-wrap:wrap}.back{margin-left:auto}.hero{text-align:left;margin-top:20px}}
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="top">
+      <img class="logo" src="img/memora.png" alt="Memora">
+      <div class="brand"><h1>MEMORA</h1><p>Palavras que também viram lembranças</p></div>
+      <button class="back" id="voltar" type="button">← Voltar</button>
+    </header>
+
+    <section class="hero">
+      <h2>Mural de Recados</h2>
+      <p>Deixe uma mensagem para fazer parte da história deste evento. As mensagens serão exibidas depois de aprovadas pelo responsável.</p>
+    </section>
+
+    <div class="layout">
+      <section class="panel">
+        <h3>Deixe seu recado</h3>
+        <form id="formMensagem">
+          <div class="field">
+            <label for="nome">Seu nome</label>
+            <input id="nome" name="nome" type="text" minlength="2" maxlength="80" autocomplete="name" placeholder="Como podemos identificar você?" required>
+          </div>
+          <div class="field">
+            <label for="mensagem">Sua mensagem</label>
+            <textarea id="mensagem" name="mensagem" minlength="3" maxlength="1000" placeholder="Escreva uma lembrança, um desejo ou uma dedicatória..." required></textarea>
+            <div class="counter"><span>Máximo de 1.000 caracteres</span><span id="contador">0 / 1000</span></div>
+          </div>
+          <button class="btn primary" id="enviar" type="submit">Enviar mensagem</button>
+          <p class="hint">Ao enviar, sua mensagem fica pendente de aprovação antes de aparecer publicamente.</p>
+          <p id="statusEnvio" class="status" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section class="panel">
+        <h3>Mensagens compartilhadas</h3>
+        <div id="listaMensagens" class="messages"><div class="empty">Carregando as mensagens aprovadas...</div></div>
+        <p id="statusLista" class="status" role="status" aria-live="polite"></p>
+      </section>
+    </div>
+    <footer class="footer">Memora — suas histórias merecem ser lembradas.</footer>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="mural.js"></script>
+</body>
+</html>
