@@ -143,13 +143,20 @@ function renderizarGaleria() {
     const container = document.createElement("div");
     container.classList.add("photo-wrapper");
 
-    container.innerHTML = `
-      <img src="${url}" loading="lazy" onclick="openZoomModal(${originalIndex})">
-      <button class="like-btn" onclick="curtirFoto('${item.name}', this)">
-        ♡ ${likes}
-      </button>
-    `;
+    const imagem = document.createElement("img");
+    imagem.src = url;
+    imagem.alt = `Fotografia do evento: ${item.name}`;
+    imagem.loading = "lazy";
+    imagem.addEventListener("click", () => openZoomModal(originalIndex));
 
+    const botaoCurtir = document.createElement("button");
+    botaoCurtir.type = "button";
+    botaoCurtir.className = "like-btn";
+    botaoCurtir.setAttribute("aria-pressed", "false");
+    botaoCurtir.textContent = `♡ ${likes}`;
+    botaoCurtir.addEventListener("click", () => curtirFoto(item.name, botaoCurtir));
+
+    container.append(imagem, botaoCurtir);
     grid.appendChild(container);
   });
 }
