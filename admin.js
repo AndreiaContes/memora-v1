@@ -1,5 +1,5 @@
 const params = new URLSearchParams(window.location.search);
-const evento = "default";
+const evento = params.get("evento") || sessionStorage.getItem("evento_storage_folder") || sessionStorage.getItem("evento_slug") || "default";
  
 
 const nomeEvento = sessionStorage.getItem("evento_nome");
@@ -85,7 +85,11 @@ async function carregarFotosDoEvento() {
     const wrapper = document.createElement("div");
     wrapper.className = "photo-wrapper";
 
-    wrapper.innerHTML = `<img src="${url}">`;
+    const imagem = document.createElement("img");
+    imagem.src = url;
+    imagem.alt = `Fotografia do evento: ${item.name}`;
+    imagem.loading = "lazy";
+    wrapper.appendChild(imagem);
 
     wrapper.addEventListener("click", () => {
       if (modoSelecaoAtivo) {
