@@ -423,6 +423,56 @@
       .hidden-message-card button:hover {
         background: rgba(198, 161, 91, 0.12);
       }
+
+      /* ===== Celular: o mural continua sendo o mural de cortiça ===== */
+      .board-stage {
+        container-type: inline-size;
+      }
+
+      @media (max-width: 680px) {
+        .postits-layer {
+          display: block;
+        }
+
+        .wall-logo {
+          display: block;
+          left: 4%;
+          top: 3%;
+          width: 22%;
+          max-height: 12%;
+        }
+
+        .wall-heading {
+          top: 3%;
+          left: 28%;
+          width: 44%;
+          text-align: center;
+        }
+        .wall-heading h1 {
+          font-size: 5cqw;
+        }
+        .wall-heading p {
+          display: none;
+        }
+        .event-line {
+          margin-top: 0;
+          font-size: 2.2cqw;
+        }
+
+        .back-link {
+          top: 3%;
+          right: 2%;
+          padding: 1.2cqw 2cqw;
+          font-size: 2.1cqw;
+        }
+
+        .postit-message {
+          font-size: max(1.05cqw, 4px) !important;
+        }
+        .postit-name {
+          font-size: max(0.95cqw, 4px) !important;
+        }
+      }
     </style>
   </head>
 

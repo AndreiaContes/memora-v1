@@ -130,6 +130,52 @@ function obterUrl(foto) {
   return urlsFotos.get(foto.name);
 }
 
+/* Pede ao Supabase uma versão reduzida da foto (mais leve).
+   Se o projeto não oferecer redimensionamento, usa o original. */
+let transformacaoImagemIndisponivel = false;
+
+try {
+  transformacaoImagemIndisponivel =
+    sessionStorage.getItem("memora:sem-transformacao") === "1";
+} catch (_) {}
+
+function definirSrcOtimizado(imagem, foto, largura) {
+  const original = obterUrl(foto);
+
+  imagem.decoding = "async";
+
+  if (transformacaoImagemIndisponivel) {
+    imagem.src = original;
+    return;
+  }
+
+  const { data } = supabaseClient.storage
+    .from(BUCKET)
+    .getPublicUrl(`${EVENTO}/${foto.name}`, {
+      transform: { width: largura, quality: 70 },
+    });
+
+  imagem.addEventListener(
+    "error",
+    () => {
+      transformacaoImagemIndisponivel = true;
+
+      try {
+        sessionStorage.setItem("memora:sem-transformacao", "1");
+      } catch (_) {}
+
+      console.info(
+        "Memora: redimensionamento de imagens indisponível, usando as fotos originais.",
+      );
+
+      imagem.src = original;
+    },
+    { once: true },
+  );
+
+  imagem.src = data.publicUrl;
+}
+
 function renderizarPagina() {
   galeria.replaceChildren();
 
@@ -143,7 +189,7 @@ function renderizarPagina() {
     item.className = "foto-item";
 
     const imagem = document.createElement("img");
-    imagem.src = obterUrl(foto);
+    definirSrcOtimizado(imagem, foto, 400);
     imagem.alt = "Fotografia do evento";
     imagem.loading = "lazy";
 
@@ -439,7 +485,7 @@ function renderizarCapa() {
 
     imagem = document.createElement("img");
     imagem.className = "foto-ajustavel";
-    imagem.src = obterUrl(fotoEscolhida);
+    definirSrcOtimizado(imagem, fotoEscolhida, 1400);
     imagem.alt = "Fotografia escolhida para a capa";
     imagem.draggable = false;
 
@@ -939,7 +985,7 @@ function abrirSeletorFotoEvento({ titulo, nomeAtual, aoEscolher }) {
     opcao.style.cursor = ehAtual || naCapa ? "not-allowed" : "pointer";
 
     const imagem = document.createElement("img");
-    imagem.src = obterUrl(foto);
+    definirSrcOtimizado(imagem, foto, 300);
     imagem.alt = foto.name;
     imagem.loading = "lazy";
 
@@ -2007,7 +2053,7 @@ function montarPreviaAlbum() {
       camadaFoto.className = "foto-interna-camada";
 
       const imagem = document.createElement("img");
-      imagem.src = obterUrl(foto);
+      definirSrcOtimizado(imagem, foto, 1200);
       imagem.alt = "Fotografia do álbum";
       imagem.loading = "lazy";
       imagem.draggable = false;
@@ -2248,11 +2294,18 @@ botaoVoltar.addEventListener("click", () => {
   });
 });
 
+let temporizadorPrevia = null;
+
+function atualizarPreviaComAtraso() {
+  clearTimeout(temporizadorPrevia);
+  temporizadorPrevia = setTimeout(atualizarPreviaExistente, 300);
+}
+
 ["titulo", "nomes", "dataEvento", "fraseCapa", "corTexto"].forEach((id) => {
   const campo = document.getElementById(id);
   if (!campo) return;
 
-  campo.addEventListener("input", atualizarPreviaExistente);
+  campo.addEventListener("input", atualizarPreviaComAtraso);
   campo.addEventListener("change", atualizarPreviaExistente);
 });
 
@@ -2372,7 +2425,7 @@ botaoEscolherFotoCapa?.addEventListener("click", () => {
     opcao.setAttribute("aria-label", `Usar ${foto.name} na capa`);
 
     const imagem = document.createElement("img");
-    imagem.src = obterUrl(foto);
+    definirSrcOtimizado(imagem, foto, 300);
     imagem.alt = foto.name;
     imagem.loading = "lazy";
 
@@ -2596,10 +2649,30 @@ botaoFolhearAlbum?.addEventListener("click", () => {
     });
   }
 
+  const modoUnico = () => window.matchMedia("(max-width: 700px)").matches;
+
   function mostrarPagina(destino) {
     indice = destino;
     esquerda.replaceChildren();
     direita.replaceChildren();
+
+    // Celular: mostra uma página por vez (a folha esquerda fica oculta)
+    if (modoUnico()) {
+      esquerda.style.background = "";
+      esquerda.style.backgroundColor = "";
+      direita.classList.remove("folha-vazia");
+
+      direita.appendChild(clonarPaginaParaLeitor(paginas[indice]));
+      direita.style.backgroundColor =
+        getComputedStyle(paginas[indice]).backgroundColor;
+
+      contador.textContent = `Página ${indice + 1} de ${paginas.length}`;
+      anterior.disabled = indice === 0;
+      proxima.disabled = indice >= paginas.length - 1;
+
+      ajustarEscalaFolhas();
+      return;
+    }
 
     if (indice === 0) {
       direita.appendChild(clonarPaginaParaLeitor(paginas[0]));
@@ -2657,6 +2730,11 @@ botaoFolhearAlbum?.addEventListener("click", () => {
   }
 
   anterior.addEventListener("click", () => {
+    if (modoUnico()) {
+      mostrarPagina(Math.max(0, indice - 1));
+      return;
+    }
+
     if (indice === 1) {
       mostrarPagina(0);
     } else if (indice > 1) {
@@ -2665,6 +2743,11 @@ botaoFolhearAlbum?.addEventListener("click", () => {
   });
 
   proxima.addEventListener("click", () => {
+    if (modoUnico()) {
+      mostrarPagina(Math.min(paginas.length - 1, indice + 1));
+      return;
+    }
+
     if (indice === 0) {
       mostrarPagina(1);
     } else if (indice + 2 < paginas.length) {
@@ -2860,10 +2943,14 @@ let ultimoSnapshotSalvo = "";
 let rascunhoPronto = false; // só permite salvar depois de ler o rascunho existente
 
 function mostrarStatusSalvamento(texto, erro = false) {
-  if (!statusSalvamento) return;
+  [statusSalvamento, document.getElementById("statusSalvamentoFinal")].forEach(
+    (alvo) => {
+      if (!alvo) return;
 
-  statusSalvamento.textContent = texto;
-  statusSalvamento.style.color = erro ? "#b3261e" : "";
+      alvo.textContent = texto;
+      alvo.style.color = erro ? "#b3261e" : "";
+    },
+  );
 }
 
 async function garantirUsuario() {
@@ -3127,6 +3214,106 @@ document
     salvarAlbum({ silencioso: true });
     botaoVoltar.click();
   });
+
+/* =========================================================
+   CELULAR: COMANDOS FINAIS DEPOIS DAS PÁGINAS
+========================================================= */
+
+function prepararAcoesFinaisMobile() {
+  const previa = document.getElementById("previaAlbum");
+
+  if (!previa || document.getElementById("acoesFinaisAlbum")) return;
+
+  const estiloFinal = document.createElement("style");
+  estiloFinal.textContent = `
+    .acoes-finais-album { display: none; }
+
+    @media (max-width: 760px) {
+      .acoes-finais-album {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 16px;
+        border: 1px solid #dfc7ac;
+        border-radius: 12px;
+        background: #fffaf4;
+        box-shadow: 0 4px 14px #00000010;
+      }
+
+      #previaAlbum[hidden] + .acoes-finais-album { display: none; }
+
+      .acoes-finais-album h3 {
+        margin: 0 0 2px;
+        color: #57351f;
+        font: 15px Georgia, serif;
+      }
+
+      .acoes-finais-album .botao { width: 100%; }
+
+      /* o que fica só na barra lateral do computador */
+      .so-desktop { display: none !important; }
+      .acoes-topo-album { display: none !important; }
+    }
+  `;
+  document.head.appendChild(estiloFinal);
+
+  ["salvarRascunhoLateral", "voltarEdicaoLateral", "compartilharAlbum", "statusSalvamento"].forEach(
+    (id) => document.getElementById(id)?.classList.add("so-desktop"),
+  );
+
+  document.querySelectorAll(".painel-lateral-album h3").forEach((titulo) => {
+    if (titulo.textContent.trim() === "Comandos") {
+      titulo.classList.add("so-desktop");
+    }
+  });
+
+  document
+    .getElementById("visualizarAlbum")
+    ?.closest(".acoes")
+    ?.classList.add("acoes-topo-album");
+
+  const barra = document.createElement("section");
+  barra.id = "acoesFinaisAlbum";
+  barra.className = "acoes-finais-album";
+  barra.setAttribute("aria-label", "Comandos finais do álbum");
+
+  const titulo = document.createElement("h3");
+  titulo.textContent = "Terminou? Confira e guarde seu álbum";
+
+  const visualizar = document.createElement("button");
+  visualizar.type = "button";
+  visualizar.className = "botao";
+  visualizar.textContent = "📖 Visualizar álbum";
+  visualizar.addEventListener("click", () => botaoVisualizar.click());
+
+  const salvar = document.createElement("button");
+  salvar.type = "button";
+  salvar.id = "salvarAlbumFinal";
+  salvar.className = "botao";
+  salvar.textContent = "💾 Salvar álbum";
+  salvar.addEventListener("click", () => salvarAlbum());
+
+  const voltar = document.createElement("button");
+  voltar.type = "button";
+  voltar.className = "botao botao-secundario";
+  voltar.textContent = "Voltar à edição";
+  voltar.addEventListener("click", () => {
+    salvarAlbum({ silencioso: true });
+    botaoVoltar.click();
+  });
+
+  const status = document.createElement("p");
+  status.id = "statusSalvamentoFinal";
+  status.className = "descricao";
+  status.setAttribute("role", "status");
+  status.setAttribute("aria-live", "polite");
+  status.style.margin = "0";
+
+  barra.append(titulo, visualizar, salvar, voltar, status);
+  previa.after(barra);
+}
+
+prepararAcoesFinaisMobile();
 
 async function iniciarEditor() {
   // 1) recupera o que foi salvo; 2) só então carrega mural e fotos
