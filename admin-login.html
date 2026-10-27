@@ -85,7 +85,13 @@
             eventoValidado.storage_folder,
           );
           
-          window.location.href = `admin.html?evento=${data.slug}`;
+          const eventoUrl = new URL("admin.html", window.location.href);
+          eventoUrl.searchParams.set(
+            "evento",
+            eventoValidado.storage_folder || eventoValidado.slug || "default"
+          );
+          eventoUrl.searchParams.set("eventoId", eventoValidado.id);
+          window.location.href = eventoUrl.href;
         });
     </script>
   </body>
