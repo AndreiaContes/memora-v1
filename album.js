@@ -130,6 +130,23 @@ if (btnCamera && cameraOnlyInput) {
       return;
     }
 
+    const limiteBytes = 20 * 1024 * 1024;
+    const extensaoImagemValida = /\.(jpe?g|png|webp|gif|avif|heic|heif)$/i;
+    const tiposPermitidos = new Set([
+      "image/jpeg", "image/png", "image/webp", "image/gif",
+      "image/avif", "image/heic", "image/heif"
+    ]);
+    const arquivoInvalido = arquivosParaUpload.find((arquivo) =>
+      arquivo.size > limiteBytes ||
+      !extensaoImagemValida.test(arquivo.name) ||
+      (arquivo.type && !tiposPermitidos.has(arquivo.type.toLowerCase()))
+    );
+
+    if (arquivoInvalido) {
+      alert("Use JPG, PNG, WebP, GIF, AVIF ou HEIC de até 20 MB por foto.");
+      return;
+    }
+
     btnEnviar.disabled = true;
     btnEnviar.innerText = "ENVIANDO...";
 
@@ -145,7 +162,11 @@ if (btnCamera && cameraOnlyInput) {
       }
 
       alert("Fotos enviadas com sucesso!");
-      window.location.href = `galeria.html?evento=${evento}`;
+      const urlGaleria = new URL("galeria.html", window.location.href);
+      urlGaleria.searchParams.set("evento", evento);
+      if (params.get("eventoId")) urlGaleria.searchParams.set("eventoId", params.get("eventoId"));
+      if (params.get("preview") === "1") urlGaleria.searchParams.set("preview", "1");
+      window.location.href = urlGaleria.href;
     } catch (error) {
       console.error(error);
       alert("Erro ao enviar fotos.");
