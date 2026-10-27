@@ -4,6 +4,11 @@
 -- in staging before any production approval.
 begin;
 
+-- Internal helpers stay outside the exposed Data API schema.
+create schema if not exists private;
+revoke all on schema private from public;
+grant usage on schema private to anon, authenticated;
+
 -- Passwords in public.eventos are currently stored in a legacy non-bcrypt form.
 -- Hash nonempty legacy values in place before exposing the validation RPC.
 -- Preserve already bcrypt-formatted values. Test the real login flow in staging.
@@ -114,6 +119,25 @@ $function$;
 revoke all on function public.validar_acesso_evento(text) from public;
 grant execute on function public.validar_acesso_evento(text) to anon, authenticated;
 
+-- Replace the exposed helper with an internal predicate used only by RLS.
+create or replace function private.memora_evento_ativo(p_evento_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $function$
+  select exists (
+    select 1
+    from public.eventos as e
+    where e.id = p_evento_id
+      and e.evento_ativo is true
+  );
+$function$;
+revoke all on function private.memora_evento_ativo(uuid) from public;
+grant execute on function private.memora_evento_ativo(uuid) to anon, authenticated;
+revoke all on function public.memora_evento_ativo(uuid) from public, anon, authenticated;
+
 -- Replace public auto-approval with a moderation queue.
 alter table public.mural_mensagens
   alter column status set default 'pendente';
@@ -127,7 +151,7 @@ for insert
 to anon, authenticated
 with check (
   status = 'pendente'
-  and public.memora_evento_ativo(evento_id)
+  and private.memora_evento_ativo(evento_id)
   and char_length(btrim(nome)) between 2 and 80
   and char_length(btrim(mensagem)) between 3 and 1000
 );
@@ -148,7 +172,7 @@ grant select, update, delete on table public.mural_mensagens to authenticated;
 
 -- SECURITY DEFINER predicates let guest policies validate event/folder ownership
 -- without granting anon direct SELECT access to the private events table.
-create or replace function public.memora_evento_pasta_ativa(p_pasta text)
+create or replace function private.memora_evento_pasta_ativa(p_pasta text)
 returns boolean
 language sql
 stable
@@ -162,10 +186,10 @@ as $function$
       and (e.storage_folder = p_pasta or e.slug = p_pasta)
   );
 $function$;
-revoke all on function public.memora_evento_pasta_ativa(text) from public;
-grant execute on function public.memora_evento_pasta_ativa(text) to anon, authenticated;
+revoke all on function private.memora_evento_pasta_ativa(text) from public;
+grant execute on function private.memora_evento_pasta_ativa(text) to anon, authenticated;
 
-create or replace function public.memora_foto_evento_valida(p_evento text, p_foto text)
+create or replace function private.memora_foto_evento_valida(p_evento text, p_foto text)
 returns boolean
 language sql
 stable
@@ -186,15 +210,15 @@ as $function$
         and (e.storage_folder = p_evento or e.slug = p_evento)
     );
 $function$;
-revoke all on function public.memora_foto_evento_valida(text, text) from public;
-grant execute on function public.memora_foto_evento_valida(text, text) to anon, authenticated;
+revoke all on function private.memora_foto_evento_valida(text, text) from public;
+grant execute on function private.memora_foto_evento_valida(text, text) to anon, authenticated;
 
 drop policy if exists "Permitir inserção pública" on public.curtidas;
 create policy "Curtir somente fotos existentes de eventos ativos"
 on public.curtidas
 for insert
 to anon, authenticated
-with check (public.memora_foto_evento_valida(evento, foto_id));
+with check (private.memora_foto_evento_valida(evento, foto_id));
 
 -- Storage folder ownership controls. Public bucket URLs remain public by design;
 -- these policies do NOT make public-bucket downloads private.
@@ -207,7 +231,7 @@ to anon, authenticated
 with check (
   bucket_id = 'fotos-eventos'
   and lower(name) ~ '[.](jpe?g|png|webp|gif|avif|heic|heif)$'
-  and public.memora_evento_pasta_ativa(split_part(name, '/', 1))
+  and private.memora_evento_pasta_ativa(split_part(name, '/', 1))
 );
 
 drop policy if exists "excluir arquivos do bucket fotos-eventos" on storage.objects;
