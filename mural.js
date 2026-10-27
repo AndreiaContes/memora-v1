@@ -121,7 +121,7 @@ form.addEventListener("submit", async (evento) => {
   try {
     const { error } = await supabaseClient
       .from("mural_mensagens")
-      .insert({ evento_id: EVENTO_ID, nome, mensagem });
+      .insert({ evento_id: EVENTO_ID, nome, mensagem, status: "pendente" });
 
     if (error) throw error;
 
