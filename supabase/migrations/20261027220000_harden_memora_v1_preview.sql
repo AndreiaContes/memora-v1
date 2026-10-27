@@ -1,11 +1,33 @@
--- Memora V1 preview: security and moderation hardening.
--- REVIEW REQUIRED before applying to any shared or production database.
--- This file is intentionally committed only to the isolated preview branch.
+-- Memora V1 — hardening reviewed for isolated preview/staging.
+-- NOT applied to any database by this commit.
+-- Review current constraints, storage paths, app flows and rate-limiting behavior
+-- in staging before any production approval.
 begin;
 
--- Restore the RPC expected by admin-login.html. The legacy column currently
--- contains a non-bcrypt value; support that legacy format during the transition
--- and bcrypt hashes when the existing password data is migrated separately.
+-- Passwords in public.eventos are currently stored in a legacy non-bcrypt form.
+-- Hash nonempty legacy values in place before exposing the validation RPC.
+-- Preserve already bcrypt-formatted values. Test the real login flow in staging.
+update public.eventos as e
+set senha = extensions.crypt(e.senha, extensions.gen_salt('bf', 12))
+where e.senha is not null
+  and btrim(e.senha) <> ''
+  and e.senha not like '$2a$%'
+  and e.senha not like '$2b$%'
+  and e.senha not like '$2y$%';
+
+-- Small IP-based attempt window for the legacy event-password RPC.
+-- Browser/API roles receive no direct privileges on this table.
+create table if not exists public.memora_login_attempts (
+  client_hash text primary key,
+  window_started_at timestamptz not null default now(),
+  attempts integer not null default 0,
+  blocked_until timestamptz
+);
+alter table public.memora_login_attempts enable row level security;
+revoke all on table public.memora_login_attempts from public, anon, authenticated;
+
+-- The login response contains only the selected event's public routing metadata.
+-- It never returns the password hash.
 create or replace function public.validar_acesso_evento(p_senha text)
 returns table (
   id uuid,
@@ -13,37 +35,86 @@ returns table (
   nome text,
   storage_folder text
 )
-language sql
+language plpgsql
 stable
 security definer
 set search_path = ''
 as $function$
+declare
+  v_headers jsonb;
+  v_ip text;
+  v_hash text;
+  v_attempts integer;
+  v_blocked_until timestamptz;
+begin
+  v_headers := coalesce(
+    nullif(current_setting('request.headers', true), '')::jsonb,
+    '{}'::jsonb
+  );
+
+  v_ip := coalesce(
+    nullif(btrim(v_headers ->> 'x-real-ip'), ''),
+    nullif(btrim(split_part(coalesce(v_headers ->> 'x-forwarded-for', ''), ',', 1)), ''),
+    'unknown'
+  );
+
+  v_hash := encode(extensions.digest(v_ip, 'sha256'), 'hex');
+
+  insert into public.memora_login_attempts (
+    client_hash, window_started_at, attempts, blocked_until
+  )
+  values (v_hash, now(), 1, null)
+  on conflict (client_hash) do update
+  set
+    window_started_at = case
+      when public.memora_login_attempts.window_started_at < now() - interval '15 minutes'
+      then now()
+      else public.memora_login_attempts.window_started_at
+    end,
+    attempts = case
+      when public.memora_login_attempts.window_started_at < now() - interval '15 minutes'
+      then 1
+      else public.memora_login_attempts.attempts + 1
+    end,
+    blocked_until = case
+      when public.memora_login_attempts.window_started_at < now() - interval '15 minutes'
+      then null
+      when public.memora_login_attempts.blocked_until > now()
+      then public.memora_login_attempts.blocked_until
+      when public.memora_login_attempts.attempts + 1 >= 10
+      then now() + interval '15 minutes'
+      else null
+    end
+  returning attempts, blocked_until into v_attempts, v_blocked_until;
+
+  if v_blocked_until is not null and v_blocked_until > now() then
+    return;
+  end if;
+
+  if p_senha is null or btrim(p_senha) = '' then
+    return;
+  end if;
+
+  return query
   select e.id, e.slug, e.nome, e.storage_folder
   from public.eventos as e
   where e.evento_ativo is true
+    and e.senha is not null
     and (
-      (
-        e.senha like '$2a$%'
-        or e.senha like '$2b$%'
-        or e.senha like '$2y$%'
-      )
-      and extensions.crypt(p_senha, e.senha) = e.senha
-      or (
-        e.senha not like '$2a$%'
-        and e.senha not like '$2b$%'
-        and e.senha not like '$2y$%'
-        and e.senha = p_senha
-      )
+      e.senha like '$2a$%'
+      or e.senha like '$2b$%'
+      or e.senha like '$2y$%'
     )
+    and extensions.crypt(p_senha, e.senha) = e.senha
   order by e.created_at desc
   limit 1;
+end;
 $function$;
 
 revoke all on function public.validar_acesso_evento(text) from public;
 grant execute on function public.validar_acesso_evento(text) to anon, authenticated;
 
--- Public guest messages must enter the moderation queue; otherwise the
--- current default of 'aprovada' bypasses the intended moderation workflow.
+-- Replace public auto-approval with a moderation queue.
 alter table public.mural_mensagens
   alter column status set default 'pendente';
 
@@ -61,11 +132,22 @@ with check (
   and char_length(btrim(mensagem)) between 3 and 1000
 );
 
-grant insert on table public.mural_mensagens to anon, authenticated;
-grant update on table public.mural_mensagens to authenticated;
+-- Least-privilege table grants: RLS alone does not prevent TRUNCATE.
+revoke all privileges on table public.album_rascunhos from anon, authenticated;
+grant select, insert, update on table public.album_rascunhos to authenticated;
 
--- Storage policies are scoped to the event folder, and anonymous clients can
--- no longer delete every object in the shared bucket.
+revoke all privileges on table public.memora_albums from anon, authenticated;
+grant select, insert, update, delete on table public.memora_albums to authenticated;
+
+revoke all privileges on table public.curtidas from anon, authenticated;
+grant select, insert on table public.curtidas to anon, authenticated;
+
+revoke all privileges on table public.mural_mensagens from anon, authenticated;
+grant insert on table public.mural_mensagens to anon, authenticated;
+grant select, update, delete on table public.mural_mensagens to authenticated;
+
+-- Storage folder ownership controls. Public bucket URLs remain public by design;
+-- these policies do NOT make public-bucket downloads private.
 drop policy if exists "permit_upload lcy7fk_0" on storage.objects;
 drop policy if exists "Convidados enviam fotos para eventos ativos" on storage.objects;
 create policy "Convidados enviam fotos para eventos ativos"
@@ -74,7 +156,7 @@ for insert
 to anon, authenticated
 with check (
   bucket_id = 'fotos-eventos'
-  and lower(name) ~ '\.(jpe?g|png|webp|gif|avif|heic|heif)$'
+  and lower(name) ~ '[.](jpe?g|png|webp|gif|avif|heic|heif)$'
   and exists (
     select 1
     from public.eventos as e
@@ -126,12 +208,14 @@ using (
 
 commit;
 
--- IMPORTANT:
--- 1. The bucket is currently public. Public object URLs remain publicly readable
---    even after Storage SELECT policies; private media requires a separate,
---    coordinated change to signed URLs across the frontend.
--- 2. Legacy non-bcrypt event passwords are accepted for compatibility here.
---    Hashing the existing values is a separate data migration and must be
---    validated against the actual stored format before use.
--- 3. Apply to a disposable Supabase branch/staging database first, then test
---    admin access, guest uploads, moderation and owner-only deletion end to end.
+-- REQUIRED STAGING CHECKS:
+-- 1. Verify the x-real-ip / x-forwarded-for values Supabase actually exposes to
+--    RPC calls and confirm the rate-limit window behaves correctly.
+-- 2. The V1 password login is not Supabase Auth; authenticated-only owner
+--    deletion will not work for a sessionStorage-only admin login. Migrate the
+--    admin flow to Supabase Auth or a separately authenticated Edge Function.
+-- 3. The bucket is public. Direct public object URLs bypass Storage SELECT RLS.
+--    To make photos private, coordinate a separate signed-URL change across all
+--    gallery, telão, admin and album-editor pages; do not flip bucket visibility
+--    without that complete frontend change.
+-- 4. Verify realtime subscriptions and gallery likes after reducing table grants.
