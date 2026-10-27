@@ -61,7 +61,7 @@
         <div id="albumGrid"></div>
 
         <button
-          onclick="window.location.href = 'album.html'"
+          onclick="const url = new URL('album.html', window.location.href); url.search = window.location.search; window.location.href = url.href; 
           class="btn-glow-primary"
           style="margin-top: 20px"
         >
