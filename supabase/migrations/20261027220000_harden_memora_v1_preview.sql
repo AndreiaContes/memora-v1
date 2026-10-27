@@ -36,7 +36,7 @@ returns table (
   storage_folder text
 )
 language plpgsql
-stable
+volatile
 security definer
 set search_path = ''
 as $function$
@@ -146,6 +146,56 @@ revoke all privileges on table public.mural_mensagens from anon, authenticated;
 grant insert on table public.mural_mensagens to anon, authenticated;
 grant select, update, delete on table public.mural_mensagens to authenticated;
 
+-- SECURITY DEFINER predicates let guest policies validate event/folder ownership
+-- without granting anon direct SELECT access to the private events table.
+create or replace function public.memora_evento_pasta_ativa(p_pasta text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $function$
+  select exists (
+    select 1
+    from public.eventos as e
+    where e.evento_ativo is true
+      and (e.storage_folder = p_pasta or e.slug = p_pasta)
+  );
+$function$;
+revoke all on function public.memora_evento_pasta_ativa(text) from public;
+grant execute on function public.memora_evento_pasta_ativa(text) to anon, authenticated;
+
+create or replace function public.memora_foto_evento_valida(p_evento text, p_foto text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $function$
+  select
+    p_evento is not null
+    and p_foto is not null
+    and p_foto !~ '/'
+    and exists (
+      select 1
+      from public.eventos as e
+      join storage.objects as o
+        on o.bucket_id = 'fotos-eventos'
+       and o.name = p_evento || '/' || p_foto
+      where e.evento_ativo is true
+        and (e.storage_folder = p_evento or e.slug = p_evento)
+    );
+$function$;
+revoke all on function public.memora_foto_evento_valida(text, text) from public;
+grant execute on function public.memora_foto_evento_valida(text, text) to anon, authenticated;
+
+drop policy if exists "Permitir inserção pública" on public.curtidas;
+create policy "Curtir somente fotos existentes de eventos ativos"
+on public.curtidas
+for insert
+to anon, authenticated
+with check (public.memora_foto_evento_valida(evento, foto_id));
+
 -- Storage folder ownership controls. Public bucket URLs remain public by design;
 -- these policies do NOT make public-bucket downloads private.
 drop policy if exists "permit_upload lcy7fk_0" on storage.objects;
@@ -157,15 +207,7 @@ to anon, authenticated
 with check (
   bucket_id = 'fotos-eventos'
   and lower(name) ~ '[.](jpe?g|png|webp|gif|avif|heic|heif)$'
-  and exists (
-    select 1
-    from public.eventos as e
-    where e.evento_ativo is true
-      and (
-        split_part(name, '/', 1) = e.storage_folder
-        or split_part(name, '/', 1) = e.slug
-      )
-  )
+  and public.memora_evento_pasta_ativa(split_part(name, '/', 1))
 );
 
 drop policy if exists "excluir arquivos do bucket fotos-eventos" on storage.objects;
