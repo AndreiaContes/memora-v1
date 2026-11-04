@@ -3,9 +3,9 @@
 */
 "use strict";
 
-const SUPABASE_URL = "https://rakktbwnybrsvqpbgaid.supabase.co";
+const SUPABASE_URL = "https://qrxbehonxmjkfvmgymnf.supabase.co";
 // Use somente a chave publicável do projeto. Nunca use service_role ou segredo.
-const SUPABASE_KEY = "sb_publishable_tLqbug91hIKbyGJHv4V8kA_HbjCmKiL";
+const SUPABASE_KEY = "sb_publishable_xVnIfUG82lAPb7RSapf3Rw_KTMWn5Vh";
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const params = new URLSearchParams(window.location.search);
