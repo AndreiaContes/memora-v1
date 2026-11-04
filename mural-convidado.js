@@ -1,9 +1,9 @@
 
-const SUPABASE_URL = "https://rakktbwnybrsvqpbgaid.supabase.co";
+const SUPABASE_URL = "https://qrxbehonxmjkfvmgymnf.supabase.co";
 
 // Copie a chave publicável do seu conta.js.
 // Não use uma chave service_role ou secreta.
-const MURAL_SUPABASE_KEY = "sb_publishable_tLqbug91hIKbyGJHv4V8kA_HbjCmKiL";
+const MURAL_SUPABASE_KEY = "sb_publishable_xVnIfUG82lAPb7RSapf3Rw_KTMWn5Vh";
 
 const muralClient = window.supabase.createClient(
   SUPABASE_URL,
