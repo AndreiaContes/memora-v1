@@ -1,6 +1,6 @@
-const SUPABASE_URL = "https://rakktbwnybrsvqpbgaid.supabase.co";
+const SUPABASE_URL = "https://qrxbehonxmjkfvmgymnf.supabase.co";
 // Substitua pelo mesmo valor da chave publicável que usa em conta.js.
-const SUPABASE_KEY = "sb_publishable_tLqbug91hIKbyGJHv4V8kA_HbjCmKiL";
+const SUPABASE_KEY = "sb_publishable_xVnIfUG82lAPb7RSapf3Rw_KTMWn5Vh";
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const params = new URLSearchParams(window.location.search);

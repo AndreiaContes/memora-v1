@@ -5,8 +5,8 @@ const evento = "default";
 const nomeEvento = sessionStorage.getItem("evento_nome");
 const eventoId = sessionStorage.getItem("evento_id");
 
-const SUPABASE_URL = "https://rakktbwnybrsvqpbgaid.supabase.co";
-const SUPABASE_KEY = "sb_publishable_tLqbug91hIKbyGJHv4V8kA_HbjCmKiL";
+const SUPABASE_URL = "https://qrxbehonxmjkfvmgymnf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_xVnIfUG82lAPb7RSapf3Rw_KTMWn5Vh";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let todasAsFotos = [];
